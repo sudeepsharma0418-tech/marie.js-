@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mahadev Recondition - Vehicle Management</title>
+<style>
+:root{--primary:#1e3a8a;--secondary:#0284c7;--success:#16a34a;--danger:#dc2626;--warning:#d97706;--bg:#f8fafc;--card:#fff;--text:#0f172a}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg);color:var(--text);padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+header{background:var(--primary);color:#fff;padding:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+.app-title{font-size:1.2rem;font-weight:bold;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.search-box input{width:100%;padding:12px 15px;border-radius:8px;border:none;font-size:1rem;outline:none}
+nav{display:flex;background:#fff;border-bottom:1px solid #e2e8f0;overflow-x:auto;position:sticky;top:95px;z-index:99}
+nav button{flex:1;padding:12px 10px;border:none;background:none;font-weight:600;color:#64748b;white-space:nowrap;cursor:pointer;border-bottom:3px solid transparent}
+nav button.active{color:var(--primary);border-bottom-color:var(--primary)}
+.container{padding:15px;max-width:800px;margin:0 auto}
+.card{background:var(--card);border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.card-title{font-size:1.1rem;font-weight:bold;color:var(--primary);margin-bottom:10px;border-bottom:1px solid #f1f5f9;padding-bottom:5px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+.stat-card{background:#eff6ff;padding:12px;border-radius:8px;border-left:4px solid var(--secondary)}
+.stat-card.green{background:#f0fdf4;border-left-color:var(--success)}
+.stat-card.red{background:#fef2f2;border-left-color:var(--danger)}
+.stat-card.orange{background:#fffbeb;border-left-color:var(--warning)}
+.stat-title{font-size:.8rem;color:#64748b}
+.stat-value{font-size:1.05rem;font-weight:bold;margin-top:4px}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:.85rem;font-weight:600;margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:16px}
+.btn{width:100%;padding:12px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;color:#fff;background:var(--primary);margin-top:5px}
+.btn-success{background:var(--success)}.btn-danger{background:var(--danger)}.btn-gray{background:#64748b}
+.btn-sm{padding:5px 10px;font-size:.75rem;width:auto;margin:0 0 0 4px}
+.item-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;margin-top:4px}
+.badge{padding:4px 8px;border-radius:12px;font-size:.75rem;font-weight:bold;white-space:nowrap}
+.badge-stock{background:#dbeafe;color:#1e40af}.badge-sold{background:#dcfce7;color:#166534}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;text-align:left;font-size:.85rem;border-bottom:1px solid #e2e8f0}
+th{background:#f1f5f9;font-weight:600}
+.hidden{display:none!important}
+.img-preview{max-width:100%;height:120px;object-fit:cover;border-radius:6px;margin-top:5px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;overflow:auto;padding:15px}
+.modal-box{background:#fff;border-radius:12px;padding:15px;max-width:500px;margin:20px auto}
+.modal-box img{width:100%;border-radius:8px}
+.muted{font-size:.85rem;color:#64748b}
+.toast{position:fixed;left:15px;right:15px;bottom:calc(20px + env(safe-area-inset-bottom,0px));background:#0f172a;color:#fff;padding:12px 14px;border-radius:10px;z-index:400;font-size:.9rem;text-align:center}
+.thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;margin-top:6px;display:block;background:#e2e8f0}
+</style>
+</head>
+<body>
+<header>
+  <div class="app-title"><span>महादेव रिकन्डीसन</span><span id="today-bs" style="font-size:.8rem;font-weight:normal;text-align:right;line-height:1.35"></span></div>
+  <div class="search-box"><input type="text" id="globalSearch" placeholder="गाडी नं, नाम वा फोनबाट खोज्नुहोस्..." oninput="handleSearch()"></div>
+</header>
+<nav id="nav">
+  <button class="active" data-tab="dashboard">ड्यासबोर्ड</button>
+  <button data-tab="stock">स्टक (Stock)</button>
+  <button data-tab="purchase">खरिद (Purchase)</button>
+  <button data-tab="garage">ग्यारेज (Garage)</button>
+  <button data-tab="sell">बिक्री (Sell)</button>
+  <button data-tab="trade">लेनदेन (RP)</button>
+  <button data-tab="done">चुक्ता (Done)</button>
+  <button data-tab="capital">पुँजी (Capital)</button>
+  <button data-tab="balance">वासलात (Balance)</button>
+  <button data-tab="trash">रिसाइकल बिन</button>
+</nav>
+
+<div class="container">
+  <div id="search-panel" class="card hidden"><div class="card-title">खोजी नतिजा (Search Results)</div><div id="search-results-list"></div></div>
+
+  <div id="tab-dashboard">
+    <div class="card"><div class="card-title">कम्पनीमा नगद (Cash Available)</div><div class="stat-value" id="dash-cash" style="font-size:1.7rem">रु. ०</div><div id="cash-detail" style="margin-top:8px;font-size:.85rem;color:#475569"></div><button class="btn btn-sm btn-gray" style="margin:10px 0 0" onclick="adjustCash()">नगद मिलान गर्नुहोस्</button></div>
+    <div class="stats-grid">
+      <div class="stat-card green"><div class="stat-title">यस महिनाको नाफा</div><div class="stat-value" id="dash-month-profit">रु. ०</div></div>
+      <div class="stat-card green"><div class="stat-title">कुल नाफा (Total Profit)</div><div class="stat-value" id="dash-total-profit">रु. ०</div></div>
+      <div class="stat-card orange"><div class="stat-title">उठ्न बाँकी (Receivable)</div><div class="stat-value" id="dash-receivable">रु. ०</div></div>
+      <div class="stat-card red"><div class="stat-title">तिर्न बाँकी (Payable)</div><div class="stat-value" id="dash-payable">रु. ०</div></div>
+    </div>
+    <div class="card"><div class="card-title">कारोबार सारांश</div>
+      <div class="item-row"><span>स्टकमा रहेका गाडी</span><strong id="dash-stock-count">० वटा</strong></div>
+      <div class="item-row"><span>बिक्री भइसकेका गाडी</span><strong id="dash-sold-count">० वटा</strong></div>
+      <div class="item-row"><span>फोन storage प्रयोग</span><strong id="storage-info">-</strong></div>
+    </div>
+    <div class="card"><div class="card-title">बैकअप / रिस्टोर (Backup)</div>
+      <p class="muted" id="backup-info" style="margin-bottom:8px"></p>
+      <button class="btn btn-success" onclick="backupFile()">बैकअप फाइल सेभ गर्नुहोस्</button>
+      <button class="btn btn-gray" onclick="backupText()">बैकअप टेक्स्ट कपी गर्नुहोस्</button>
+      <button class="btn" onclick="makePDF()">PDF रिपोर्ट बनाउनुहोस् (पढ्न / प्रिन्ट गर्न)</button>
+      <p class="muted" style="margin-top:6px">PDF पढ्न र प्रिन्ट गर्न मात्र हो, यसबाट रिस्टोर हुँदैन। रिस्टोरका लागि "बैकअप फाइल" राख्नुहोस्।</p>
+      <div class="form-group" style="margin-top:14px"><label>रिस्टोर: बैकअप फाइल छान्नुहोस्</label><input type="file" accept=".json,application/json" onchange="restoreFile(this)"></div>
+      <div class="form-group"><label>वा बैकअप टेक्स्ट यहाँ paste गर्नुहोस्</label><textarea id="restore_text" rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:16px"></textarea></div>
+      <button class="btn btn-danger" onclick="restoreText()">टेक्स्टबाट रिस्टोर गर्नुहोस्</button></div>
+    <div class="card"><div class="card-title">महिना क्लोजिङ (Monthly Closing)</div><p class="muted" id="close-info" style="margin-bottom:6px"></p><button class="btn btn-danger" onclick="closeMonthlyAccount()">महिना क्लोजिङ गर्नुहोस्</button><button class="btn btn-gray" onclick="undoClosing()">पछिल्लो क्लोजिङ रद्द गर्नुहोस्</button></div>
+    <div class="card"><div class="card-title">पुराना क्लोजिङ</div><div id="closing-list"></div></div>
+  </div>
+
+  <div id="tab-stock" class="hidden"><div class="card"><div class="card-title">स्टकमा रहेका गाडीहरू (In Stock)</div><div id="stock-list"></div></div></div>
+
+  <div id="tab-purchase" class="hidden"><div class="card"><div class="card-title">नयाँ गाडी खरिद प्रविष्टि (Purchase Entry)</div>
+    <form onsubmit="addPurchase(event)">
+      <div class="form-group"><label>गाडी नम्बर (Plate No)</label><input type="text" id="p_plate" required placeholder="लु ५९ प ८४६५"></div>
+      <div class="form-group"><label>गाडीको मोडल (Make &amp; Model)</label><input type="text" id="p_model" required placeholder="Pulsar 150"></div>
+      <div class="form-group"><label>खरिद मूल्य (Purchase Price)</label><input type="number" id="p_price" required></div>
+      <div class="form-group"><label>खरिद मिति (Date)</label><input type="date" id="p_date" oninput="showBS('p_date','p_bs')"><small id="p_bs" class="muted"></small></div>
+      <div class="form-group"><label>धनीको नाम (Owner Name)</label><input type="text" id="p_owner" required></div>
+      <div class="form-group"><label>सम्पर्क नं (Contact)</label><input type="text" id="p_contact"></div>
+      <div class="form-group"><label>बिल / ब्लुबुकको फोटो (ऐच्छिक)</label><input type="file" accept="image/*" onchange="pickPhoto(this,'p','p_img_prev')"><img id="p_img_prev" class="img-preview hidden"></div>
+      <button class="btn btn-success" type="submit">खरिद सेभ गर्नुहोस्</button>
+    </form></div></div>
+
+  <div id="tab-garage" class="hidden">
+    <div class="card"><div class="card-title">ग्यारेज तथा मर्मत खर्च (Garage Expense)</div>
+      <form onsubmit="addGarageExpense(event)">
+        <div class="form-group"><label>सम्बन्धित गाडी (Select Vehicle)</label><select id="g_plate" required></select></div>
+        <div class="form-group"><label>विवरण (Details)</label><input type="text" id="g_desc" required placeholder="इन्जिन मर्मत"></div>
+        <div class="form-group"><label>खर्च रकम (Amount)</label><input type="number" id="g_amount" required></div>
+        <div class="form-group"><label>बिल फोटो (ऐच्छिक)</label><input type="file" accept="image/*" onchange="pickPhoto(this,'g','g_img_prev')"><img id="g_img_prev" class="img-preview hidden"></div>
+        <button class="btn" type="submit">ग्यारेज बिल थप्नुहोस्</button>
+      </form></div>
+    <div class="card"><div class="card-title">ग्यारेज खर्च सूची</div><div id="garage-list"></div></div>
+  </div>
+
+  <div id="tab-sell" class="hidden">
+    <div class="card"><div class="card-title">गाडी बिक्री प्रविष्टि (Sell Entry)</div>
+      <form onsubmit="addSell(event)">
+        <div class="form-group"><label>गाडी रोज्नुहोस् (Select Vehicle)</label><select id="s_plate" required onchange="updateSellCostInfo()"></select></div>
+        <div style="font-size:.85rem;color:#1e40af;margin-bottom:10px" id="s_cost_info"></div>
+        <div class="form-group"><label>बिक्री मूल्य (Selling Price)</label><input type="number" id="s_price" required></div>
+        <div class="form-group"><label>बिक्री खर्च रकम (ऐच्छिक — कमिसन, नामसारी आदि)</label><input type="number" id="s_exp_amt"></div>
+        <div class="form-group"><label>बिक्री खर्चको विवरण</label><input type="text" id="s_exp_desc" placeholder="कमिसन / नामसारी"></div>
+        <div class="form-group"><label>बिक्री मिति (Date)</label><input type="date" id="s_date" oninput="showBS('s_date','s_bs')"><small id="s_bs" class="muted"></small></div>
+        <div class="form-group"><label>किन्नेको नाम (Buyer Name)</label><input type="text" id="s_buyer" required></div>
+        <div class="form-group"><label>फोन नं (Contact)</label><input type="text" id="s_contact"></div>
+        <button class="btn btn-success" type="submit">बिक्री सम्पन्न (Sold Out)</button>
+      </form></div>
+    <div class="card"><div class="card-title">बिक्री भइसकेका गाडीहरू (Sold Records)</div><div id="sold-list"></div></div>
+  </div>
+
+  <div id="tab-trade" class="hidden">
+    <div class="card"><div class="card-title">लेनदेन प्रविष्टि (Receivable / Payable Entry)</div>
+      <form onsubmit="addTradeRP(event)">
+        <div class="form-group"><label>लेनदेनको प्रकार (Type)</label><select id="t_type" required onchange="$('t_pick').value='';fillTradePick()"><option value="Receivable">उठ्न बाँकी (Receivable)</option><option value="Payable">तिर्न बाँकी (Payable)</option></select></div>
+        <div class="form-group"><label id="t_pick_lbl">गाडी छान्नुहोस् (ऐच्छिक)</label><select id="t_pick" onchange="pickTradeVehicle()"></select></div>
+        <div class="form-group"><label>मान्छेको नाम (Person Name)</label><input type="text" id="t_person" required></div>
+        <div class="form-group"><label>फोन नं (Phone)</label><input type="text" id="t_phone"></div>
+        <div class="form-group"><label>सम्बन्धित गाडी/विषय (Vehicle / Topic)</label><input type="text" id="t_vehicle" placeholder="Pulsar 220 / Garage"></div>
+        <div class="form-group"><label>रकम (Amount)</label><input type="number" id="t_amount" required></div>
+        <button class="btn" type="submit">लेनदेन सेभ गर्नुहोस्</button>
+      </form></div>
+    <div class="card"><div class="card-title">उठ्न बाँकी सूची (Receivables List)</div><div id="receivable-list"></div></div>
+    <div class="card"><div class="card-title">तिर्न बाँकी सूची (Payables List)</div><div id="payable-list"></div></div>
+  </div>
+
+  <div id="tab-done" class="hidden"><div class="card"><div class="card-title">चुक्ता भएका लेनदेन (Completed)</div><div id="done-list"></div></div></div>
+
+  <div id="tab-capital" class="hidden">
+    <div class="card"><div class="card-title">साझेदार / लगानी (Partners Capital)</div>
+      <form onsubmit="addCapital(event)">
+        <div class="form-group"><label>साझेदारको नाम (Partner Name)</label><input type="text" id="c_name" list="c_names" required><datalist id="c_names"></datalist></div>
+        <div class="form-group"><label>थप लगानी (Capital Deposit)</label><input type="number" id="c_amount" required></div>
+        <div class="form-group"><label>मिति (Date)</label><input type="date" id="c_date" oninput="showBS('c_date','c_bs')"><small id="c_bs" class="muted"></small></div>
+        <div class="form-group"><label>विवरण / कारण (ऐच्छिक)</label><input type="text" id="c_note" placeholder="जस्तै: eSewa बाट पठाएको"></div>
+        <div class="form-group"><label>भुक्तानीको स्क्रिनसट (ऐच्छिक)</label><input type="file" accept="image/*" onchange="pickPhoto(this,'c','c_img_prev')"><img id="c_img_prev" class="img-preview hidden"></div>
+        <button class="btn" type="submit">लगानी रेकर्ड गर्नुहोस्</button>
+      </form></div>
+    <div class="card"><div class="card-title">साझेदारहरूको विवरण</div><div id="capital-list"></div></div>
+  </div>
+
+  <div id="tab-trash" class="hidden"><div class="card"><div class="card-title">रिसाइकल बिन (३० दिनसम्म)</div><p class="muted" style="margin-bottom:8px">मेटिएका डेटा ३० दिन यहाँ रहन्छन्, त्यसपछि आफैं सधैंका लागि हट्छन्।</p><div id="trash-list"></div><button class="btn btn-danger" onclick="emptyBin()">बिन खाली गर्नुहोस्</button></div></div>
+
+  <div id="tab-balance" class="hidden"><div class="card"><div class="card-title">वासलात (Balance Sheet)</div>
+    <table><thead><tr><th>सम्पत्ति (Assets)</th><th>रकम</th></tr></thead><tbody id="assets-table"></tbody></table><br>
+    <table><thead><tr><th>दायित्व र पुँजी (Liabilities &amp; Equity)</th><th>रकम</th></tr></thead><tbody id="liab-table"></tbody></table>
+  </div></div>
+</div>
+
+<div id="askbox" class="modal hidden" style="z-index:300"><div class="modal-box"><p id="ask_msg" style="margin-bottom:14px;font-size:1rem;line-height:1.5"></p><button class="btn btn-danger" id="ask_yes" type="button">हुन्छ</button><button class="btn btn-gray" id="ask_no" type="button">होइन</button></div></div>
+<div id="toast" class="toast hidden"></div>
+<div id="modal" class="modal hidden" onclick="if(event.target===this)closeModal()"><div class="modal-box"><div class="card-title" id="m_title"></div><form id="m_form"></form></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+function ask(msg){return new Promise(res=>{$('ask_msg').textContent=msg;$('askbox').classList.remove('hidden');const d=v=>{$('askbox').classList.add('hidden');res(v)};$('ask_yes').onclick=()=>d(true);$('ask_no').onclick=()=>d(false)})}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.add('hidden'),3500)}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rs=n=>'रु. '+(Number(n)||0).toLocaleString();
+const newId=()=>'ph_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+
+/* ---------- NEPALI (BS) DATE ---------- */
+const BS_DATA={2073:[31,32,31,32,31,30,30,30,29,29,30,31],2074:[31,31,31,32,31,31,30,29,30,29,30,30],2075:[31,31,32,31,31,31,30,29,30,29,30,30],2076:[31,32,31,32,31,30,30,30,29,29,30,30],2077:[31,32,31,32,31,30,30,30,29,30,29,31],2078:[31,31,31,32,31,31,30,29,30,29,30,30],2079:[31,31,32,31,31,31,30,29,30,29,30,30],2080:[31,32,31,32,31,30,30,30,29,29,30,30],2081:[31,31,32,32,31,30,30,30,29,30,30,30],2082:[30,32,31,32,31,30,30,30,29,30,30,30],2083:[31,31,32,31,31,30,30,30,29,30,30,30],2084:[31,31,32,31,31,30,30,30,29,30,30,30],2085:[31,32,31,32,30,31,30,30,29,30,30,30],2086:[30,32,31,32,31,30,30,30,29,30,30,30],2087:[31,31,32,31,31,31,30,30,29,30,30,30],2088:[30,31,32,32,30,31,30,30,29,30,30,30],2089:[30,32,31,32,31,30,30,30,29,30,30,30],2090:[30,32,31,32,31,30,30,30,29,30,30,30],2091:[31,31,32,31,31,31,30,30,29,30,30,30],2092:[31,31,32,32,31,30,30,30,29,30,30,30]};
+const BS_MONTHS=['बैशाख','जेष्ठ','आषाढ','श्रावण','भाद्र','आश्विन','कार्तिक','मंसिर','पौष','माघ','फाल्गुन','चैत्र'];
+const NEP=n=>String(n).replace(/\d/g,d=>'०१२३४५६७८९'[d]);
+const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function ad2bs(y,m,d){ // anchor: 2017-02-11 AD = 2073-10-29 BS
+  let n=Math.round((Date.UTC(y,m-1,d)-Date.UTC(2017,1,11))/864e5);if(n<0)return null;
+  let by=2073,bm=10,bd=29+n;
+  for(;;){const row=BS_DATA[by];if(!row)return null;const dim=row[bm-1];if(bd<=dim)break;bd-=dim;bm++;if(bm>12){bm=1;by++}}
+  return{y:by,m:bm,d:bd};
+}
+function adParts(r){
+  const t=String(r.date||'').replace(/[०-९]/g,c=>'०१२३४५६७८९'.indexOf(c));
+  const m=t.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if(m&&+m[1]>=2000&&+m[1]<=2050)return[+m[1],+m[2],+m[3]];
+  if(r.ts){const x=new Date(r.ts);return[x.getFullYear(),x.getMonth()+1,x.getDate()]}
+  return null;
+}
+const bsOf=r=>{const p=adParts(r);return p?ad2bs(p[0],p[1],p[2]):null};
+const bsFmt=b=>NEP(b.d)+' '+BS_MONTHS[b.m-1]+' '+NEP(b.y);
+function bsText(r){const b=bsOf(r);return b?bsFmt(b):esc(r.date||'')}
+const isoOf=r=>{const p=adParts(r);return p?p[0]+'-'+String(p[1]).padStart(2,'0')+'-'+String(p[2]).padStart(2,'0'):''};
+const daysAD=(a,b)=>{const x=adParts(a),y=adParts(b);return x&&y?Math.max(0,Math.round((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(x[0],x[1]-1,x[2]))/864e5)):0};
+const holdDays=r=>daysAD(r,{date:todayISO()});
+const holdColor=r=>{const n=holdDays(r);return n>=60?'#dc2626':n>=30?'#d97706':'#16a34a'};
+function showBS(i,o){const v=$(i).value,p=v?v.split('-').map(Number):null,b=p&&ad2bs(p[0],p[1],p[2]);$(o).textContent=b?'नेपाली मिति: '+bsFmt(b):''}
+/* ---------- TITHI (calculated from Sun & Moon positions, at ~6am Nepal time) ---------- */
+const TITHI=['प्रतिपदा','द्वितीया','तृतीया','चतुर्थी','पञ्चमी','षष्ठी','सप्तमी','अष्टमी','नवमी','दशमी','एकादशी','द्वादशी','त्रयोदशी','चतुर्दशी'];
+const MOON_T=[[0,0,1,0,6288774],[2,0,-1,0,1274027],[2,0,0,0,658314],[0,0,2,0,213618],[0,1,0,0,-185116],[0,0,0,2,-114332],[2,0,-2,0,58793],[2,-1,-1,0,57066],[2,0,1,0,53322],[2,-1,0,0,45758],[0,1,-1,0,-40923],[1,0,0,0,-34720],[0,1,1,0,-30383],[2,0,0,-2,15327],[0,0,1,2,-12528],[0,0,1,-2,10980],[4,0,-1,0,10675],[0,0,3,0,10034],[4,0,-2,0,8548],[2,1,-1,0,-7888],[2,1,0,0,-6766],[1,0,-1,0,-5163],[1,1,0,0,4987],[2,-1,1,0,4036],[2,0,2,0,3994],[4,0,0,0,3861],[2,0,-3,0,3665],[0,1,-2,0,-2689]];
+function elongation(jd){
+  const T=(jd-2451545)/36525,R=Math.PI/180,mod=x=>((x%360)+360)%360;
+  const L=mod(218.3164477+481267.88123421*T-0.0015786*T*T),D=mod(297.8501921+445267.1114034*T-0.0018819*T*T),M=mod(357.5291092+35999.0502909*T-0.0001536*T*T),Mp=mod(134.9633964+477198.8675055*T+0.0087414*T*T),F=mod(93.272095+483202.0175233*T-0.0036539*T*T);
+  const E=1-0.002516*T-0.0000074*T*T;let sl=0;
+  for(const[d,m,mp,f,c] of MOON_T){const e=Math.abs(m)===1?E:Math.abs(m)===2?E*E:1;sl+=c*e*Math.sin((d*D+m*M+mp*Mp+f*F)*R)}
+  sl+=3958*Math.sin((119.75+131.849*T)*R)+1962*Math.sin((L-F)*R)+318*Math.sin((53.09+479264.29*T)*R);
+  const moon=mod(L+sl/1e6),L0=280.46646+36000.76983*T,Ms=357.52911+35999.05029*T;
+  const C=(1.914602-0.004817*T)*Math.sin(Ms*R)+0.019993*Math.sin(2*Ms*R)+0.000289*Math.sin(3*Ms*R);
+  return mod(moon-mod(L0+C));
+}
+function tithiOf(y,m,d){
+  const n=Math.floor(elongation(Date.UTC(y,m-1,d,0,15)/864e5+2440587.5)/12)+1; // 6:00am Nepal time
+  return{n,shukla:n<=15,name:n===15?'पूर्णिमा':n===30?'औंसी':TITHI[(n-1)%15]};
+}
+function tithiText(){const t=new Date(),r=tithiOf(t.getFullYear(),t.getMonth()+1,t.getDate());return'तिथि: '+(r.shukla?'शुक्ल':'कृष्ण')+' पक्ष, '+r.name}
+function setToday(){$('today-bs').innerHTML=bsText({date:todayISO()})+'<br>'+tithiText()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setToday()});
+function resetDates(){['p','s','c'].forEach(k=>{$(k+'_date').value=todayISO();showBS(k+'_date',k+'_bs')})}
+
+
+/* ---------- DATA (text in localStorage) ---------- */
+function loadDB(){
+  let d=null;try{d=JSON.parse(localStorage.getItem('mahadev_db'))}catch(e){}
+  d=d||{purchases:[],garageExpenses:[],sells:[],
+    tradeRP:[{type:'Receivable',person:'bhandari dai',vehicle:'',amount:875,status:'Pending'},{type:'Payable',person:'TIKARAM GAIRHE',vehicle:'PULSAR 220',amount:25000,status:'Pending'}],
+    capitals:[{name:'gopikrishna',amount:1143886},{name:'chandru',amount:458071}]};
+  ['purchases','garageExpenses','sells','tradeRP','capitals'].forEach(k=>d[k]=d[k]||[]);
+  d.sells.forEach(s=>{if(!s.ts)s.ts=Date.now()});
+  d.trash=d.trash||[];d.closings=d.closings||[];d.tradeRP.forEach(t=>{if(!t.id)t.id=newId()});
+  return d;
+}
+let db=loadDB();
+let saveOK=true;
+const ok=m=>{if(saveOK)toast(m)};
+function saveDB(){
+  saveOK=true;try{localStorage.setItem('mahadev_db',JSON.stringify(db))}catch(e){saveOK=false;toast('डेटा सेभ भएन। यो data: लिङ्कबाट खोल्दा browser ले storage रोक्छ। App को असली link बाट Safari मा खोल्नुहोस्।')}
+  renderAll();
+}
+
+/* ---------- PHOTOS (IndexedDB, compressed) ---------- */
+let idb=null;
+function openIDB(){return new Promise(r=>{try{const q=indexedDB.open('mahadev_photos',1);q.onupgradeneeded=()=>q.result.createObjectStore('p');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}})}
+function idbOp(mode,fn){return new Promise(r=>{if(!idb)return r(null);try{const t=idb.transaction('p',mode);const q=fn(t.objectStore('p'));t.oncomplete=()=>r(q&&q.result!==undefined?q.result:true);t.onerror=t.onabort=()=>r(null)}catch(e){r(null)}})}
+const putPhoto=(id,d)=>idbOp('readwrite',s=>s.put(d,id));
+const getPhoto=id=>idbOp('readonly',s=>s.get(id));
+const delPhoto=id=>id?idbOp('readwrite',s=>s.delete(id)):null;
+
+function compressImage(file,max=900,q=.6){return new Promise((res,rej)=>{
+  const u=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{const k=Math.min(1,max/Math.max(img.width,img.height));const w=Math.round(img.width*k),h=Math.round(img.height*k);
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};
+  img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u})}
+
+const pending={p:null,g:null,c:null};
+function pickPhoto(input,key,prevId){
+  const f=input.files[0],im=$(prevId);
+  if(!f){pending[key]=null;im.classList.add('hidden');return}
+  pending[key]=compressImage(f).then(d=>{im.src=d;im.classList.remove('hidden');return d}).catch(()=>{im.classList.add('hidden');return null});
+}
+async function takePending(key){
+  const p=pending[key];pending[key]=null;if(!p)return{data:null,failed:false};
+  const d=await p;return d?{data:d,failed:false}:{data:null,failed:true};
+}
+async function storePhoto(rec,d){ // IndexedDB first; if blocked, keep the small photo inside the record
+  const id=newId();
+  if(await putPhoto(id,d)){rec.photoId=id;delete rec.photo}else{rec.photo=d;delete rec.photoId}
+}
+const hasPhoto=r=>!!(r.photoId||r.photo);
+function clearPreview(id){const im=$(id);im.classList.add('hidden');im.removeAttribute('src')}
+async function applyPhoto(rec,photo){
+  if(!photo)return;
+  if(photo.remove){await delPhoto(rec.photoId);delete rec.photoId;delete rec.photo}
+  else if(photo.set){const old=rec.photoId;await storePhoto(rec,photo.set);if(old&&old!==rec.photoId)await delPhoto(old)}
+}
+function showImg(img){
+  $('m_title').textContent='फोटो';
+  $('m_form').innerHTML=`<img src="${img.src}"><button class="btn btn-gray" type="button" onclick="closeModal()">बन्द गर्नुहोस्</button>`;
+  $('m_form').onsubmit=null;$('modal').classList.remove('hidden');
+}
+
+/* ---------- MODAL EDITOR ---------- */
+function closeModal(){$('modal').classList.add('hidden')}
+function openModal(title,fields,vals,onSave,photoOpts){
+  $('m_title').textContent=title;
+  let h='';
+  fields.forEach(f=>{
+    h+=`<div class="form-group"><label>${f.label}</label>`;
+    if(f.options)h+=`<select name="${f.key}">`+f.options.map(o=>`<option value="${esc(o.v)}" ${o.v==vals[f.key]?'selected':''}>${esc(o.t)}</option>`).join('')+'</select>';
+    else h+=`<input name="${f.key}" type="${f.type||'text'}" value="${esc(vals[f.key])}" ${f.req?'required':''}>`;
+    h+='</div>';
+  });
+  if(photoOpts)h+=`<div class="form-group"><label>फोटो ${photoOpts.has?'(अहिले छ — नयाँ छानेमा बदलिन्छ)':'(छैन)'}</label><input type="file" accept="image/*" id="m_photo">${photoOpts.has?'<label style="font-weight:normal;margin-top:6px"><input type="checkbox" id="m_rm" style="width:auto"> फोटो हटाउने</label>':''}</div>`;
+  h+='<button class="btn btn-success" type="submit">सेभ गर्नुहोस्</button><button class="btn btn-gray" type="button" onclick="closeModal()">रद्द</button>';
+  const form=$('m_form');form.innerHTML=h;
+  form.onsubmit=async ev=>{
+    ev.preventDefault();const v={};
+    fields.forEach(f=>{const el=form.querySelector(`[name="${f.key}"]`);v[f.key]=f.type==='number'?(parseFloat(el.value)||0):el.value.trim()});
+    let photo=null;
+    if(photoOpts){const file=$('m_photo').files[0];
+      if(file){try{photo={set:await compressImage(file)}}catch(_){toast('फोटो पढ्न सकिएन, बाँकी सेभ हुन्छ।')}}
+      else if($('m_rm')&&$('m_rm').checked)photo={remove:true}}
+    await onSave(v,photo);closeModal();
+  };
+  $('modal').classList.remove('hidden');
+}
+
+/* ---------- ADD ---------- */
+async function addPurchase(e){
+  e.preventDefault();
+  const ph=await takePending('p');
+  const item={plate:$('p_plate').value.trim(),model:$('p_model').value.trim(),price:parseFloat($('p_price').value)||0,owner:$('p_owner').value.trim(),contact:$('p_contact').value.trim(),date:$('p_date').value||todayISO(),status:'In Stock'};
+  if(ph.data)await storePhoto(item,ph.data);
+  db.purchases.push(item);saveDB();e.target.reset();clearPreview('p_img_prev');resetDates();
+  ok(ph.failed?'गाडी सेभ भयो, तर फोटो सेभ भएन।':'गाडी सफलतापुर्वक खरिदमा सेभ भयो!');
+}
+async function addGarageExpense(e){
+  e.preventDefault();
+  const ph=await takePending('g');
+  const item={plate:$('g_plate').value,desc:$('g_desc').value.trim(),amount:parseFloat($('g_amount').value)||0,date:todayISO()};
+  if(ph.data)await storePhoto(item,ph.data);
+  db.garageExpenses.push(item);saveDB();e.target.reset();clearPreview('g_img_prev');
+  ok(ph.failed?'खर्च सेभ भयो, तर फोटो सेभ भएन।':'ग्यारेज खर्च जोडियो!');
+}
+function addSell(e){
+  e.preventDefault();
+  const plate=$('s_plate').value;
+  const p=db.purchases.find(x=>x.plate===plate&&x.status==='In Stock');if(p)p.status='Sold';
+  db.sells.push({plate,price:parseFloat($('s_price').value)||0,buyer:$('s_buyer').value.trim(),contact:$('s_contact').value.trim(),date:$('s_date').value||todayISO(),ts:Date.now()});
+  const ea=parseFloat($('s_exp_amt').value)||0;
+  if(ea>0)db.garageExpenses.push({plate,desc:'बिक्री खर्च: '+($('s_exp_desc').value.trim()||'अन्य'),amount:ea,kind:'sell',date:todayISO()});
+  saveDB();e.target.reset();$('s_cost_info').innerText='';resetDates();ok('बिक्री सम्पन्न भयो!');
+}
+function fillTradePick(){
+  const isRec=$('t_type').value==='Receivable',cur=$('t_pick').value;
+  $('t_pick_lbl').textContent=isRec?'बेचेको गाडी छान्नुहोस् (ऐच्छिक)':'किनेको गाडी छान्नुहोस् (ऐच्छिक)';
+  const list=isRec?db.sells.map((x,i)=>({i,t:x.plate+' — '+x.buyer+(x.contact?' ('+x.contact+')':'')})).reverse():db.purchases.map((p,i)=>({i,t:p.plate+' ('+p.model+') — '+p.owner+(p.contact?' ('+p.contact+')':'')})).reverse();
+  $('t_pick').innerHTML='<option value="">-- हातले लेख्ने / गाडी छानेर आफैं भर्ने --</option>'+list.map(o=>`<option value="${o.i}">${esc(o.t)}</option>`).join('');
+  if(list.some(o=>String(o.i)===cur))$('t_pick').value=cur;
+}
+function pickTradeVehicle(){
+  const v=$('t_pick').value;if(v==='')return;
+  if($('t_type').value==='Receivable'){const x=db.sells[v],p=db.purchases.find(y=>y.plate===x.plate);$('t_person').value=x.buyer;$('t_phone').value=x.contact||'';$('t_vehicle').value=x.plate+(p?' '+p.model:'')}
+  else{const p=db.purchases[v];$('t_person').value=p.owner;$('t_phone').value=p.contact||'';$('t_vehicle').value=p.plate+' '+p.model}
+}
+function addTradeRP(e){
+  e.preventDefault();
+  db.tradeRP.push({id:newId(),type:$('t_type').value,person:$('t_person').value.trim(),phone:$('t_phone').value.trim(),vehicle:$('t_vehicle').value.trim(),amount:parseFloat($('t_amount').value)||0,status:'Pending',date:todayISO()});
+  saveDB();e.target.reset();ok('लेनदेन प्रविष्टि भयो!');
+}
+async function addCapital(e){
+  e.preventDefault();
+  const name=$('c_name').value.toLowerCase().trim(),amount=parseFloat($('c_amount').value)||0;
+  if(!name||amount<=0)return;
+  const ph=await takePending('c');
+  const dep={amount,date:$('c_date').value||todayISO(),note:$('c_note').value.trim(),ts:Date.now()};
+  if(ph.data)await storePhoto(dep,ph.data);
+  let c=db.capitals.find(x=>x.name===name);if(!c){c={name,amount:0};db.capitals.push(c)}
+  (c.deposits=c.deposits||[]).push(dep);c.amount+=amount;
+  saveDB();e.target.reset();clearPreview('c_img_prev');resetDates();
+  ok(ph.failed?'लगानी सेभ भयो, तर फोटो सेभ भएन।':'लगानी रेकर्ड भयो!');
+}
+function toggleTradeStatus(i){db.tradeRP[i].status=db.tradeRP[i].status==='Pending'?'Settled':'Pending';saveDB()}
+function updateSellCostInfo(){
+  const plate=$('s_plate').value;if(!plate)return;
+  const p=db.purchases.find(x=>x.plate===plate&&x.status==='In Stock');
+  const g=db.garageExpenses.filter(x=>x.plate===plate).reduce((a,x)=>a+x.amount,0);
+  $('s_cost_info').innerText='कुल स्टक लागत: '+rs((p?p.price:0)+g);
+}
+
+/* ---------- EDIT / DELETE ---------- */
+function editPurchase(i){
+  const p=db.purchases[i];
+  openModal('खरिद सच्याउनुहोस्',[{key:'plate',label:'गाडी नम्बर',req:1},{key:'model',label:'मोडल',req:1},{key:'price',label:'खरिद मूल्य',type:'number',req:1},{key:'owner',label:'धनीको नाम'},{key:'contact',label:'सम्पर्क नं'},{key:'date',label:'खरिद मिति',type:'date'}],Object.assign({},p,{date:isoOf(p)}),async(v,photo)=>{
+    const old=p.plate;if(!v.date)delete v.date;Object.assign(p,v);
+    if(v.plate!==old){db.garageExpenses.forEach(g=>{if(g.plate===old)g.plate=v.plate});db.sells.forEach(s=>{if(s.plate===old)s.plate=v.plate})}
+    await applyPhoto(p,photo);saveDB();
+  },{has:hasPhoto(p)});
+}
+async function delPurchase(i){
+  const p=db.purchases[i];
+  if(!await ask(p.plate+' र यसका ग्यारेज खर्च/बिक्री रेकर्ड रिसाइकल बिनमा सार्ने? (३० दिनसम्म फर्काउन मिल्छ)'))return;
+  toTrash('purchase','गाडी: '+p.plate+' ('+p.model+')',{purchase:p,garage:db.garageExpenses.filter(g=>g.plate===p.plate),sells:db.sells.filter(x=>x.plate===p.plate)});
+  db.garageExpenses=db.garageExpenses.filter(g=>g.plate!==p.plate);
+  db.sells=db.sells.filter(x=>x.plate!==p.plate);
+  db.purchases.splice(i,1);saveDB();
+}
+function editGarage(i){
+  const g=db.garageExpenses[i];
+  openModal('ग्यारेज खर्च सच्याउनुहोस्',[{key:'plate',label:'गाडी',options:db.purchases.map(p=>({v:p.plate,t:p.plate+' ('+p.model+')'}))},{key:'desc',label:'विवरण',req:1},{key:'amount',label:'रकम',type:'number',req:1}],g,async(v,photo)=>{
+    Object.assign(g,v);await applyPhoto(g,photo);saveDB();
+  },{has:hasPhoto(g)});
+}
+async function delGarage(i){
+  if(!await ask('यो खर्च रिसाइकल बिनमा सार्ने?'))return;
+  const g=db.garageExpenses.splice(i,1)[0];toTrash('garage','खर्च: '+g.plate+' - '+g.desc+' ('+rs(g.amount)+')',{rec:g});saveDB();
+}
+function editSell(i){
+  const s=db.sells[i];
+  openModal('बिक्री सच्याउनुहोस् ('+s.plate+')',[{key:'price',label:'बिक्री मूल्य',type:'number',req:1},{key:'buyer',label:'किन्नेको नाम',req:1},{key:'contact',label:'फोन नं'},{key:'date',label:'बिक्री मिति',type:'date'}],Object.assign({},s,{date:isoOf(s)}),v=>{if(!v.date)delete v.date;Object.assign(s,v);saveDB()});
+}
+async function delSell(i){
+  const s=db.sells[i];if(!await ask('यो बिक्री रिसाइकल बिनमा सारी गाडी फेरि स्टकमा फर्काउने? (यसका बिक्री खर्च पनि सँगै जान्छन्)'))return;
+  const ex=db.garageExpenses.filter(g=>g.plate===s.plate&&g.kind==='sell');
+  const p=db.purchases.find(x=>x.plate===s.plate);if(p)p.status='In Stock';
+  db.garageExpenses=db.garageExpenses.filter(g=>!(g.plate===s.plate&&g.kind==='sell'));
+  db.sells.splice(i,1);
+  toTrash('sell','बिक्री: '+s.plate+' → '+s.buyer+' ('+rs(s.price)+')',{sell:s,expenses:ex});saveDB();
+}
+function editTrade(i){
+  const t=db.tradeRP[i];
+  openModal('लेनदेन सच्याउनुहोस्',[{key:'type',label:'प्रकार',options:[{v:'Receivable',t:'उठ्न बाँकी (Receivable)'},{v:'Payable',t:'तिर्न बाँकी (Payable)'}]},{key:'person',label:'नाम',req:1},{key:'phone',label:'फोन नं'},{key:'vehicle',label:'गाडी/विषय'},{key:'amount',label:'रकम',type:'number',req:1}],t,v=>{Object.assign(t,v);syncT(t);saveDB()});
+}
+function editCapital(i){
+  const c=db.capitals[i];
+  openModal('लगानी सच्याउनुहोस्',[{key:'name',label:'साझेदारको नाम',req:1},{key:'amount',label:'कुल लगानी',type:'number',req:1}],c,v=>{v.name=v.name.toLowerCase();Object.assign(c,v);saveDB()});
+}
+function editDeposit(i,j){
+  const c=db.capitals[i],d=c.deposits[j];
+  openModal('लगानी विवरण सच्याउनुहोस्',[{key:'amount',label:'रकम',type:'number',req:1},{key:'date',label:'मिति',type:'date'},{key:'note',label:'विवरण'}],d,async(v,photo)=>{
+    c.amount+=v.amount-d.amount;Object.assign(d,v);await applyPhoto(d,photo);saveDB();
+  },{has:hasPhoto(d)});
+}
+async function delDeposit(i,j){
+  if(!await ask('यो लगानी रेकर्ड रिसाइकल बिनमा सार्ने? (साझेदारको कुल लगानी घट्छ)'))return;
+  const c=db.capitals[i],d=c.deposits.splice(j,1)[0];c.amount-=d.amount;
+  toTrash('deposit','लगानी: '+c.name+' ('+rs(d.amount)+', '+bsText(d)+')',{name:c.name,rec:d});saveDB();
+}
+async function delCapital(i){
+  if(!await ask('यो साझेदार रिसाइकल बिनमा सार्ने? (नगद/पुँजीको हिसाब घट्छ)'))return;
+  const c=db.capitals.splice(i,1)[0];toTrash('capital','साझेदार: '+c.name+' ('+rs(c.amount)+')',{rec:c});saveDB();
+}
+const acts=(edit,del,extra='')=>`<div class="acts">${extra}<button class="btn btn-sm" onclick="${edit}">सच्याउने</button><button class="btn btn-sm btn-danger" onclick="${del}">मेट्ने</button></div>`;
+const thumb=r=>hasPhoto(r)?`<img class="thumb" ${r.photo?`src="${r.photo}"`:`data-pid="${r.photoId}"`} onclick="showImg(this)">`:'';
+function hydrate(){document.querySelectorAll('img[data-pid]').forEach(async im=>{const d=await getPhoto(im.dataset.pid);if(d&&d!==true)im.src=d;else im.remove()})}
+
+/* ---------- PAYMENTS (received / paid, with screenshot) ---------- */
+const paid=t=>(t.payments||[]).reduce((a,p)=>a+p.amount,0);
+const remain=t=>(t.payments&&t.payments.length)?Math.max(0,t.amount-paid(t)):(t.status==='Settled'?0:t.amount);
+const syncT=t=>{t.status=remain(t)>0?'Pending':'Settled'};
+function addPayment(i){
+  const t=db.tradeRP[i],isRec=t.type==='Receivable';
+  openModal(isRec?'पैसा उठ्यो (Received)':'पैसा तिरियो (Paid)',[{key:'amount',label:'रकम (बाँकी '+remain(t).toLocaleString()+')',type:'number',req:1},{key:'note',label:'टिप्पणी (ऐच्छिक)'}],{amount:remain(t),note:''},async(v,photo)=>{
+    if(v.amount<=0)return;
+    const p={amount:v.amount,note:v.note,date:todayISO(),ts:Date.now()};
+    await applyPhoto(p,photo);(t.payments=t.payments||[]).push(p);syncT(t);saveDB();
+  },{has:false});
+}
+function editPayment(i,j){
+  const t=db.tradeRP[i],p=t.payments[j];
+  openModal('भुक्तानी सच्याउनुहोस्',[{key:'amount',label:'रकम',type:'number',req:1},{key:'note',label:'टिप्पणी'}],p,async(v,photo)=>{Object.assign(p,v);await applyPhoto(p,photo);syncT(t);saveDB()},{has:hasPhoto(p)});
+}
+async function delPayment(i,j){
+  if(!await ask('यो भुक्तानी रेकर्ड रिसाइकल बिनमा सार्ने?'))return;
+  const t=db.tradeRP[i],p=t.payments.splice(j,1)[0];
+  toTrash('payment','भुक्तानी: '+t.person+' ('+rs(p.amount)+')',{tid:t.id,rec:p});
+  if(!t.payments.length)t.status='Pending';syncT(t);saveDB();
+}
+async function delTrade(i){
+  if(!await ask('यो लेनदेन र यसका भुक्तानी रेकर्ड रिसाइकल बिनमा सार्ने?'))return;
+  const t=db.tradeRP.splice(i,1)[0];
+  toTrash('trade',(t.type==='Receivable'?'उठ्न बाँकी: ':'तिर्न बाँकी: ')+t.person+' ('+rs(t.amount)+')',{rec:t});saveDB();
+}
+function addSellExpense(i){
+  const s=db.sells[i];
+  openModal('बिक्री खर्च थप्नुहोस् ('+s.plate+')',[{key:'desc',label:'विवरण',req:1},{key:'amount',label:'रकम',type:'number',req:1}],{desc:'',amount:''},async(v,photo)=>{
+    if(v.amount<=0)return;
+    const g={plate:s.plate,desc:'बिक्री खर्च: '+v.desc,amount:v.amount,kind:'sell',date:todayISO()};
+    await applyPhoto(g,photo);db.garageExpenses.push(g);saveDB();
+  },{has:false});
+}
+/* ---------- RECYCLE BIN (30 days) ---------- */
+const DAY=86400000,KEEP=30;
+function toTrash(kind,label,payload){db.trash.push({tid:newId(),kind,label,ts:Date.now(),payload})}
+function photoIds(o,out=[]){if(o&&typeof o==='object'){if(o.photoId)out.push(o.photoId);Object.values(o).forEach(v=>photoIds(v,out))}return out}
+async function purgeItem(it){for(const id of photoIds(it.payload))await delPhoto(id)}
+async function purgeExpired(){
+  const lim=Date.now()-KEEP*DAY,old=db.trash.filter(x=>x.ts<lim);if(!old.length)return;
+  for(const it of old)await purgeItem(it);
+  db.trash=db.trash.filter(x=>x.ts>=lim);try{localStorage.setItem('mahadev_db',JSON.stringify(db))}catch(e){}
+}
+function restoreItem(k){
+  const it=db.trash[k],P=it.payload;
+  if(it.kind==='purchase'){db.purchases.push(P.purchase);P.garage.forEach(g=>db.garageExpenses.push(g));P.sells.forEach(x=>db.sells.push(x))}
+  else if(it.kind==='garage')db.garageExpenses.push(P.rec);
+  else if(it.kind==='sell'){
+    const p=db.purchases.find(x=>x.plate===P.sell.plate&&x.status==='In Stock');
+    if(!p){toast('यो गाडी स्टकमा भेटिएन (मेटिएको वा फेरि बिक्री भइसकेको)। पहिले गाडी फर्काउनुहोस्।');return}
+    p.status='Sold';db.sells.push(P.sell);P.expenses.forEach(g=>db.garageExpenses.push(g));
+  }
+  else if(it.kind==='trade')db.tradeRP.push(P.rec);
+  else if(it.kind==='capital')db.capitals.push(P.rec);
+  else if(it.kind==='deposit'){
+    const c=db.capitals.find(x=>x.name===P.name);
+    if(!c){toast('यो साझेदार भेटिएन। पहिले साझेदार फर्काउनुहोस्।');return}
+    (c.deposits=c.deposits||[]).push(P.rec);c.amount+=P.rec.amount;
+  }
+  else if(it.kind==='payment'){
+    const t=db.tradeRP.find(x=>x.id===P.tid);
+    if(!t){toast('यो लेनदेन भेटिएन। पहिले लेनदेन फर्काउनुहोस्।');return}
+    (t.payments=t.payments||[]).push(P.rec);syncT(t);
+  }
+  db.trash.splice(k,1);saveDB();
+}
+async function purgeOne(k){if(!await ask('यसलाई सधैंका लागि मेट्ने? फर्काउन मिल्दैन।'))return;await purgeItem(db.trash[k]);db.trash.splice(k,1);saveDB()}
+async function emptyBin(){if(!db.trash.length||!await ask('रिसाइकल बिन पूरै खाली गर्ने? फर्काउन मिल्दैन।'))return;for(const it of db.trash)await purgeItem(it);db.trash=[];saveDB()}
+
+function adjustCash(){
+  openModal('नगद मिलान',[{key:'cash',label:'अहिले हातमा/बैंकमा वास्तविक नगद कति छ?',type:'number',req:1}],{cash:window.CASH||0},v=>{db.cashAdj=(db.cashAdj||0)+(v.cash-(window.CASH||0));saveDB()});
+}
+
+/* ---------- RENDER ---------- */
+function renderAll(){
+  const now=new Date();
+  const inStock=db.purchases.map((x,i)=>({x,i})).filter(o=>o.x.status==='In Stock');
+  const opts='<option value="">-- गाडी छान्नुहोस् --</option>'+[...inStock].reverse().map(o=>`<option value="${esc(o.x.plate)}">${esc(o.x.plate)} (${esc(o.x.model)})</option>`).join('');
+  const gSel=$('g_plate').value,sSel=$('s_plate').value;
+  $('g_plate').innerHTML=opts;$('s_plate').innerHTML=opts;$('g_plate').value=gSel;$('s_plate').value=sSel;
+  const gTotal=plate=>db.garageExpenses.filter(g=>g.plate===plate).reduce((a,b)=>a+b.amount,0);
+  const oldest=[...inStock].sort((a,b)=>holdDays(b.x)-holdDays(a.x))[0];
+  const holdSummary=oldest?`<div class="muted" style="margin-bottom:8px">कुल ${NEP(inStock.length)} गाडी | सबैभन्दा पुरानो: <b>${esc(oldest.x.plate)}</b> (${NEP(holdDays(oldest.x))} दिन) | औसत: ${NEP(Math.round(inStock.reduce((a,o)=>a+holdDays(o.x),0)/inStock.length))} दिन</div>`:'';
+
+  $('stock-list').innerHTML=holdSummary+[...inStock].reverse().map(({x,i})=>`<div class="item-row"><div style="flex:1"><strong>${esc(x.plate)}</strong> - ${esc(x.model)}<br><small>धनी: ${esc(x.owner)} (${esc(x.contact)})</small><br><small>खरिद: ${rs(x.price)} + ग्यारेज: ${rs(gTotal(x.plate))}</small><br><small>खरिद मिति: ${bsText(x)} | <b style="color:${holdColor(x)}">होल्डिङ: ${NEP(holdDays(x))} दिन</b></small>${thumb(x)}${acts(`editPurchase(${i})`,`delPurchase(${i})`)}</div><div><span class="badge badge-stock">${rs(x.price+gTotal(x.plate))}</span></div></div>`).join('')||'<p class="muted">स्टकमा कुनै गाडी छैन।</p>';
+
+  $('garage-list').innerHTML=db.garageExpenses.map((g,i)=>({g,i})).reverse().map(({g,i})=>`<div class="item-row"><div style="flex:1"><strong>${esc(g.plate)}</strong> - ${esc(g.desc)}<br><small>${rs(g.amount)} | ${bsText(g)}</small>${thumb(g)}${acts(`editGarage(${i})`,`delGarage(${i})`)}</div></div>`).join('')||'<p class="muted">कुनै खर्च छैन।</p>';
+
+  let total=0,month=0,pc=0,ps=0;const lastClose=db.closings.length?db.closings[db.closings.length-1].ts:0;
+  $('sold-list').innerHTML=db.sells.map((s,i)=>({s,i})).reverse().map(({s,i})=>{
+    const p=db.purchases.find(x=>x.plate===s.plate);
+    const cost=(p?p.price:0)+gTotal(s.plate),profit=s.price-cost;total+=profit;
+    const se=db.garageExpenses.filter(g=>g.plate===s.plate&&g.kind==='sell').reduce((a,g)=>a+g.amount,0);
+    const hd=p?` | होल्डिङ: ${NEP(daysAD(p,s))} दिन`:'';
+    if((s.ts||0)>lastClose){month+=profit;pc++;ps+=s.price}
+    return `<div class="item-row"><div style="flex:1"><strong>${esc(s.plate)}</strong> (किन्ने: ${esc(s.buyer)})<br><small>मिति: ${bsText(s)}${hd}</small><br><small>बिक्री: ${rs(s.price)} | लागत: ${rs(cost)}${se?` (यसमा बिक्री खर्च: ${rs(se)})`:''}</small>${acts(`editSell(${i})`,`delSell(${i})`,`<button class="btn btn-sm btn-success" onclick="addSellExpense(${i})">+ खर्च</button>`)}</div><div><span class="badge badge-sold">नाफा: ${rs(profit)}</span></div></div>`;
+  }).join('')||'<p class="muted">कुनै बिक्री भएको छैन।</p>';
+
+  let rec='',pay='',done='',totalRec=0,totalPay=0;
+  db.tradeRP.map((t,i)=>({t,i})).reverse().forEach(({t,i})=>{
+    const rem=remain(t),isRec=t.type==='Receivable';
+    const pays=(t.payments||[]).map((p,j)=>({p,j})).reverse().map(({p,j})=>`<div style="margin-top:8px;padding:6px 8px;background:#f1f5f9;border-radius:8px"><small>✔ ${rs(p.amount)} | ${bsText(p)}${p.note?' | '+esc(p.note):''}</small>${thumb(p)}<div class="acts"><button class="btn btn-sm" onclick="editPayment(${i},${j})">सच्याउने</button><button class="btn btn-sm btn-danger" onclick="delPayment(${i},${j})">मेट्ने</button></div></div>`).join('');
+    const row=`<div class="item-row"><div style="flex:1"><strong>${esc(t.person)}</strong>${t.phone?` <a href="tel:${esc(t.phone)}" style="font-size:.8rem">📞 ${esc(t.phone)}</a>`:''} (${esc(t.vehicle||'N/A')}) <small>${bsText(t)}</small><br><small>कुल: ${rs(t.amount)} | ${isRec?'उठिसकेको':'तिरिसकेको'}: ${rs(t.amount-rem)} | बाँकी: ${rs(rem)}</small>${pays}${acts(`editTrade(${i})`,`delTrade(${i})`,rem>0?`<button class="btn btn-sm btn-success" onclick="addPayment(${i})">${isRec?'पैसा उठ्यो':'पैसा तिरियो'}</button>`:'<span class="badge badge-sold">चुक्ता</span>')}</div></div>`;
+    if(rem>0){if(isRec){totalRec+=rem;rec+=row}else{totalPay+=rem;pay+=row}}else{done+=`<div class="muted" style="margin-top:8px"><b>${isRec?'उठ्न बाँकी (Receivable)':'तिर्न बाँकी (Payable)'}</b></div>`+row}
+  });
+  $('receivable-list').innerHTML=rec||'<p class="muted">कुनै बाँकी छैन।</p>';
+  $('payable-list').innerHTML=pay||'<p class="muted">कुनै बाँकी छैन।</p>';
+  $('done-list').innerHTML=done||'<p class="muted">कुनै चुक्ता भएको लेनदेन छैन।</p>';
+  $('trash-list').innerHTML=db.trash.map((it,k)=>({it,k})).reverse().map(({it,k})=>{const left=Math.max(0,KEEP-Math.floor((Date.now()-it.ts)/DAY));return `<div class="item-row"><div style="flex:1"><strong>${esc(it.label)}</strong><br><small>मेटिएको: ${bsText({ts:it.ts})} | ${left} दिन बाँकी</small><div class="acts"><button class="btn btn-sm btn-success" onclick="restoreItem(${k})">फर्काउने</button><button class="btn btn-sm btn-danger" onclick="purgeOne(${k})">सधैंका लागि मेट्ने</button></div></div></div>`}).join('')||'<p class="muted">रिसाइकल बिन खाली छ।</p>';
+
+  $('c_names').innerHTML=db.capitals.map(c=>`<option value="${esc(c.name)}">`).join('');
+  $('capital-list').innerHTML=db.capitals.map((c,i)=>{
+    const deps=(c.deposits||[]).map((d,j)=>({d,j})).sort((a,b)=>String(b.d.date).localeCompare(String(a.d.date)));
+    const open=c.amount-(c.deposits||[]).reduce((a,d)=>a+d.amount,0);
+    const dh=deps.map(({d,j})=>`<div style="margin-top:8px;padding:6px 8px;background:#f1f5f9;border-radius:8px"><small>＋ ${rs(d.amount)} | ${bsText(d)}${d.note?' | '+esc(d.note):''}</small>${thumb(d)}<div class="acts"><button class="btn btn-sm" onclick="editDeposit(${i},${j})">सच्याउने</button><button class="btn btn-sm btn-danger" onclick="delDeposit(${i},${j})">मेट्ने</button></div></div>`).join('');
+    return `<div class="item-row"><div style="flex:1"><strong>${esc(c.name.toUpperCase())}</strong> — ${rs(c.amount)}${open?`<br><small>शुरुको लगानी: ${rs(open)}</small>`:''}${dh}${acts(`editCapital(${i})`,`delCapital(${i})`)}</div></div>`;
+  }).join('');
+
+  $('dash-stock-count').innerText=inStock.length+' वटा';
+  $('dash-sold-count').innerText=db.sells.length+' वटा';
+  $('dash-month-profit').innerText=rs(month);
+  $('dash-total-profit').innerText=rs(total);
+  $('dash-receivable').innerText=rs(totalRec);
+  $('dash-payable').innerText=rs(totalPay);
+
+  const stockValue=inStock.reduce((a,{x})=>a+x.price+gTotal(x.plate),0);
+  const totalCap=db.capitals.reduce((a,b)=>a+b.amount,0);
+  const sumSales=db.sells.reduce((a,x)=>a+x.price,0),sumPur=db.purchases.reduce((a,x)=>a+x.price,0),sumGar=db.garageExpenses.reduce((a,x)=>a+x.amount,0),adj=db.cashAdj||0;
+  const cash=totalCap+sumSales-sumPur-sumGar-totalRec+totalPay+adj;
+  window.CASH=cash;window.SNAP={profit:month,sold:pc,sales:ps,cash,receivable:totalRec,payable:totalPay,stockCount:inStock.length,stockValue,totalProfit:total};
+  $('dash-cash').textContent=rs(cash);
+  const cr=(l,v,sg)=>`<div class="item-row" style="padding:5px 0"><span>${l}</span><span>${sg} ${rs(Math.abs(v))}</span></div>`;
+  $('cash-detail').innerHTML=cr('पुँजी',totalCap,'+')+cr('बिक्री रकम',sumSales,'+')+cr('गाडी खरिद',sumPur,'−')+cr('ग्यारेज खर्च',sumGar,'−')+cr('उठ्न बाँकी (अझै नआएको)',totalRec,'−')+cr('तिर्न बाँकी (अझै नतिरेको)',totalPay,'+')+(adj?cr('नगद मिलान समायोजन',adj,adj>=0?'+':'−'):'');
+  $('assets-table').innerHTML=`<tr><td>स्टकमा रहेका गाडी (Stock)</td><td>${rs(stockValue)}</td></tr><tr><td>उठ्न बाँकी (Trade Receivable)</td><td>${rs(totalRec)}</td></tr><tr><td>नगद (Cash)</td><td>${rs(cash)}</td></tr><tr><th>कुल सम्पत्ति (Total Assets)</th><th>${rs(stockValue+totalRec+cash)}</th></tr>`;
+  $('liab-table').innerHTML=`<tr><td>साझेदार पुँजी (Capital)</td><td>${rs(totalCap)}</td></tr><tr><td>तिर्न बाँकी (Trade Payable)</td><td>${rs(totalPay)}</td></tr><tr><td>सञ्चित नाफा (Profit)</td><td>${rs(total)}</td></tr>${adj?`<tr><td>अन्य खर्च/समायोजन</td><td>${rs(adj)}</td></tr>`:''}<tr><th>कुल दायित्व र पुँजी</th><th>${rs(totalCap+totalPay+total+adj)}</th></tr>`;
+  $('backup-info').textContent=db.lastBackup?'पछिल्लो बैकअप: '+bsText({ts:db.lastBackup})+' ('+NEP(Math.floor((Date.now()-db.lastBackup)/DAY))+' दिन अघि)':'अहिलेसम्म बैकअप लिइएको छैन — तुरुन्तै लिनुहोस्!';
+  $('backup-info').style.color=(!db.lastBackup||Date.now()-db.lastBackup>7*DAY)?'#dc2626':'#16a34a';
+  $('closing-list').innerHTML=[...db.closings].reverse().map(c=>`<div class="item-row"><div style="flex:1"><strong>${bsText(c)}</strong> — नाफा: ${rs(c.profit)}<br><small>बिक्री ${NEP(c.sold)} वटा (${rs(c.sales)}) | नगद: ${rs(c.cash)}</small><br><small>उठ्न बाँकी: ${rs(c.receivable)} | तिर्न बाँकी: ${rs(c.payable)} | स्टक: ${NEP(c.stockCount)} गाडी (${rs(c.stockValue)})</small></div></div>`).join('')||'<p class="muted">अहिलेसम्म कुनै क्लोजिङ भएको छैन।</p>';
+  $('close-info').textContent=db.closings.length?'पछिल्लो क्लोजिङ: '+bsText(db.closings[db.closings.length-1])+' (त्यसपछिको नाफा मात्र "यस महिनाको नाफा" मा गनिन्छ)':'अहिलेसम्म क्लोजिङ भएको छैन।';
+  fillTradePick();hydrate();showStorage();
+}
+async function showStorage(){
+  try{const e=await navigator.storage.estimate();$('storage-info').textContent=(e.usage/1048576).toFixed(1)+' MB'}catch(_){$('storage-info').textContent='-'}
+}
+
+/* ---------- BACKUP / RESTORE ---------- */
+async function makeBackup(){
+  const photos={};
+  for(const id of new Set(photoIds(db))){const d=await getPhoto(id);if(d&&d!==true)photos[id]=d}
+  return JSON.stringify({app:'mahadev',v:1,saved:new Date().toISOString(),db,photos});
+}
+async function backupFile(){
+  const text=await makeBackup(),name='mahadev-backup-'+todayISO()+'.json';let done=false;
+  try{const d=window.claude&&claude.use?await claude.use('downloads'):null;if(d){await d.save({filename:name,data:text});done=true}}
+  catch(e){if(e&&e.code==='declined'){toast('बैकअप सेभ गरिएन।');return}}
+  if(!done){try{const f=new File([text],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});done=true}}catch(e){if(e&&e.name==='AbortError')return}}
+  if(!done){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove();done=true}catch(e){}}
+  if(done){db.lastBackup=Date.now();saveDB();toast('बैकअप तयार भयो। फाइललाई Files / Drive / WhatsApp मा सुरक्षित राख्नुहोस्।')}
+  else toast('फाइल सेभ भएन। "बैकअप टेक्स्ट कपी" प्रयोग गर्नुहोस्।');
+}
+async function backupText(){
+  const text=await makeBackup();let c=false;
+  try{await navigator.clipboard.writeText(text);c=true}catch(e){}
+  if(!c){try{const t=document.createElement('textarea');t.value=text;t.style.cssText='position:fixed;opacity:0';document.body.appendChild(t);t.focus();t.select();c=document.execCommand('copy');t.remove()}catch(e){}}
+  if(c){db.lastBackup=Date.now();saveDB();toast('बैकअप टेक्स्ट कपी भयो। Notes / WhatsApp मा paste गरेर राख्नुहोस्।')}else toast('कपी भएन।');
+}
+function inlinePhoto(o,id,d){if(o&&typeof o==='object'){if(o.photoId===id){o.photo=d;delete o.photoId}Object.values(o).forEach(v=>inlinePhoto(v,id,d))}}
+async function applyBackup(text){
+  let b;try{b=JSON.parse(text)}catch(e){toast('यो बैकअप फाइल/टेक्स्ट मिलेन।');return}
+  if(!b||b.app!=='mahadev'||!b.db||!Array.isArray(b.db.purchases)){toast('यो महादेव app को बैकअप होइन।');return}
+  if(!await ask('रिस्टोर गर्दा अहिलेको सबै डेटा बदलिन्छ ('+NEP(Object.keys(b.photos||{}).length)+' फोटो सहित)। पक्का?'))return;
+  const nd=b.db;
+  for(const id of Object.keys(b.photos||{})){if(!await putPhoto(id,b.photos[id]))inlinePhoto(nd,id,b.photos[id])}
+  db=nd;['purchases','garageExpenses','sells','tradeRP','capitals','trash','closings'].forEach(k=>db[k]=db[k]||[]);
+  db.tradeRP.forEach(t=>{if(!t.id)t.id=newId()});
+  saveDB();toast('रिस्टोर सम्पन्न भयो।');
+}
+function restoreFile(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{applyBackup(String(r.result));inp.value=''};r.readAsText(f)}
+function restoreText(){const t=$('restore_text').value.trim();if(!t){toast('पहिले बैकअप टेक्स्ट paste गर्नुहोस्।');return}applyBackup(t).then(()=>{$('restore_text').value=''})}
+
+/* ---------- PDF REPORT (drawn page by page, works offline, Nepali text safe) ---------- */
+const PW=1240,PH=1754,MX=70,MY=80,PF='"Kohinoor Devanagari","Noto Sans Devanagari","Mangal","Nirmala UI",-apple-system,"Helvetica Neue",Arial,sans-serif';
+function pdfDoc(title){
+  const pages=[];let c,x,y,pn=0;const font=(s,b)=>(b?'bold ':'')+s+'px '+PF;
+  function fin(){x.font=font(24,false);x.fillStyle='#64748b';x.fillText(title+'  |  पेज '+NEP(pn),MX,PH-40);pages.push(c.toDataURL('image/jpeg',.82));c.width=c.height=0}
+  function np(){if(c)fin();c=document.createElement('canvas');c.width=PW;c.height=PH;x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,PW,PH);y=MY;pn++}
+  function wrap(t,s,b,ind){x.font=font(s,b);const mw=PW-2*MX-ind,out=[];let cur='';String(t).split(/\s+/).forEach(w=>{const tr=cur?cur+' '+w:w;if(x.measureText(tr).width>mw&&cur){out.push(cur);cur=w}else cur=tr});if(cur)out.push(cur);return out}
+  function card(items){
+    const pre=items.map(it=>({...it,s:it.s||28,ind:it.ind||0})).map(it=>({...it,L:wrap(it.t,it.s,it.b,it.ind)}));
+    const h=pre.reduce((a,it)=>a+it.L.length*it.s*1.45,0)+22;
+    if(y+h>PH-MY)np();
+    pre.forEach(it=>{x.font=font(it.s,it.b);x.fillStyle=it.col||'#0f172a';it.L.forEach(l=>{x.fillText(l,MX+it.ind,y+it.s);y+=it.s*1.45})});
+    y+=8;x.strokeStyle='#e2e8f0';x.lineWidth=2;x.beginPath();x.moveTo(MX,y);x.lineTo(PW-MX,y);x.stroke();y+=14;
+  }
+  function head(t){if(y+220>PH-MY)np();x.fillStyle='#1e3a8a';x.fillRect(MX,y,PW-2*MX,56);x.font=font(32,true);x.fillStyle='#fff';x.fillText(t,MX+16,y+39);y+=76}
+  np();
+  return{card,head,p:(t,o={})=>card([{t,...o}]),finish(){fin();return pages}};
+}
+function buildPDF(jp){
+  const enc=new TextEncoder(),chunks=[],offs=[];let len=0;const push=b=>{chunks.push(b);len+=b.length},str=t=>push(enc.encode(t));
+  const n=jp.length,cnt=3+3*n;
+  const obj=(id,fn)=>{offs[id]=len;str(id+' 0 obj\n');fn();str('endobj\n')};
+  str('%PDF-1.4\n');
+  obj(1,()=>str('<< /Type /Catalog /Pages 2 0 R >>\n'));
+  obj(2,()=>str('<< /Type /Pages /Count '+n+' /Kids ['+jp.map((_,i)=>(3+3*i)+' 0 R').join(' ')+'] >>\n'));
+  jp.forEach((j,i)=>{
+    const pid=3+3*i,cid=4+3*i,iid=5+3*i,cs='q 595 0 0 842 0 0 cm /Im0 Do Q';
+    obj(pid,()=>str('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 '+iid+' 0 R >> >> /Contents '+cid+' 0 R >>\n'));
+    obj(cid,()=>str('<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream\n'));
+    obj(iid,()=>{str('<< /Type /XObject /Subtype /Image /Width '+j.w+' /Height '+j.h+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+j.bytes.length+' >>\nstream\n');push(j.bytes);str('\nendstream\n')});
+  });
+  const xo=len;str('xref\n0 '+cnt+'\n0000000000 65535 f \n');
+  for(let id=1;id<cnt;id++)str(String(offs[id]).padStart(10,'0')+' 00000 n \n');
+  str('trailer\n<< /Size '+cnt+' /Root 1 0 R >>\nstartxref\n'+xo+'\n%%EOF');
+  return new Blob(chunks,{type:'application/pdf'});
+}
+async function saveBlob(blob,name){
+  let d=null;try{d=window.claude&&claude.use?await claude.use('downloads'):null}catch(e){}
+  if(d){try{await d.save({filename:name,data:blob});return'ok'}catch(e){return e&&e.code==='declined'?'declined':'fail'}}
+  try{const f=new File([blob],name,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return'ok'}}catch(e){if(e&&e.name==='AbortError')return'declined'}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();return'ok'}catch(e){}
+  return'fail';
+}
+function showPages(pages){
+  $('m_title').textContent='PDF पेजहरू (फोटो थिचिराखेर "Save to Photos" गर्नुहोस्)';
+  $('m_form').innerHTML=pages.map(u=>`<img src="${u}" style="margin-bottom:10px;border:1px solid #e2e8f0">`).join('')+'<button class="btn btn-gray" type="button" onclick="closeModal()">बन्द गर्नुहोस्</button>';
+  $('m_form').onsubmit=null;$('modal').classList.remove('hidden');
+}
+async function makePDF(){
+  toast('PDF बन्दैछ, केही सेकेन्ड पर्खनुहोस्...');
+  await new Promise(r=>setTimeout(r,60));
+  try{
+    const d=pdfDoc('महादेव रिकन्डीसन'),B=r=>bsText(r),sn=window.SNAP||{};
+    const gT=pl=>db.garageExpenses.filter(g=>g.plate===pl).reduce((a,g)=>a+g.amount,0);
+    d.card([{t:'महादेव रिकन्डीसन — पूर्ण रिपोर्ट',s:44,b:1,col:'#1e3a8a'},{t:'मिति: '+bsText({date:todayISO()})+' ('+todayISO()+')  |  '+tithiText(),col:'#475569'}]);
+    d.head('सारांश');
+    d.card([['कम्पनीको नगद',window.CASH],['यस महिनाको नाफा',sn.profit],['कुल नाफा',sn.totalProfit],['उठ्न बाँकी',sn.receivable],['तिर्न बाँकी',sn.payable],['स्टकको मूल्य ('+NEP(sn.stockCount||0)+' गाडी)',sn.stockValue],['कुल पुँजी',db.capitals.reduce((a,c)=>a+c.amount,0)]].map(([l,v])=>({t:l+': '+rs(v),b:1,s:30})));
+    const stock=db.purchases.filter(p=>p.status==='In Stock').reverse();
+    d.head('स्टकमा रहेका गाडी ('+NEP(stock.length)+')');
+    stock.forEach(p=>d.card([{t:p.plate+' — '+p.model,b:1,s:32},{t:'धनी: '+p.owner+(p.contact?' ('+p.contact+')':'')+'  |  खरिद मिति: '+B(p)},{t:'खरिद: '+rs(p.price)+' + ग्यारेज: '+rs(gT(p.plate))+' = कुल '+rs(p.price+gT(p.plate))+'  |  होल्डिङ: '+NEP(holdDays(p))+' दिन'}]));
+    if(!stock.length)d.p('कुनै गाडी छैन।');
+    d.head('बिक्री भइसकेका गाडी ('+NEP(db.sells.length)+')');
+    let tp=0,tsl=0;
+    [...db.sells].reverse().forEach(s=>{const p=db.purchases.find(x=>x.plate===s.plate),cost=(p?p.price:0)+gT(s.plate),pr=s.price-cost;tp+=pr;tsl+=s.price;
+      d.card([{t:s.plate+(p?' — '+p.model:'')+'  |  किन्ने: '+s.buyer+(s.contact?' ('+s.contact+')':''),b:1,s:32},{t:'मिति: '+B(s)+(p?'  |  होल्डिङ: '+NEP(daysAD(p,s))+' दिन':'')},{t:'बिक्री: '+rs(s.price)+'  |  लागत: '+rs(cost)+'  |  नाफा: '+rs(pr),b:1,col:pr>=0?'#166534':'#dc2626'}])});
+    d.p('कुल बिक्री: '+rs(tsl)+'  |  कुल नाफा: '+rs(tp),{b:1,s:32});
+    const trd=(title,list)=>{d.head(title+' ('+NEP(list.length)+')');list.forEach(t=>{const rem=remain(t),isR=t.type==='Receivable';
+      d.card([{t:t.person+(t.phone?' ('+t.phone+')':'')+'  —  '+(t.vehicle||'N/A')+'  |  '+B(t),b:1,s:30},{t:'कुल: '+rs(t.amount)+'  |  '+(isR?'उठिसकेको':'तिरिसकेको')+': '+rs(t.amount-rem)+'  |  बाँकी: '+rs(rem)},...(t.payments||[]).map(p=>({t:'• '+rs(p.amount)+'  |  '+B(p)+(p.note?'  |  '+p.note:''),ind:30,s:26,col:'#475569'}))])});
+      if(!list.length)d.p('कुनै छैन।')};
+    trd('उठ्न बाँकी (Receivable)',db.tradeRP.filter(t=>t.type==='Receivable'&&remain(t)>0).reverse());
+    trd('तिर्न बाँकी (Payable)',db.tradeRP.filter(t=>t.type==='Payable'&&remain(t)>0).reverse());
+    trd('चुक्ता भएका लेनदेन',db.tradeRP.filter(t=>remain(t)<=0).reverse());
+    d.head('ग्यारेज तथा बिक्री खर्च ('+NEP(db.garageExpenses.length)+')');
+    [...db.garageExpenses].reverse().forEach(g=>d.card([{t:g.plate+' — '+g.desc+'  |  '+rs(g.amount)+'  |  '+B(g)}]));
+    d.head('पुँजी / साझेदार');
+    db.capitals.forEach(c=>{const dep=c.deposits||[],open=c.amount-dep.reduce((a,x)=>a+x.amount,0);
+      d.card([{t:c.name.toUpperCase()+' — कुल '+rs(c.amount),b:1,s:32},...(open?[{t:'शुरुको लगानी: '+rs(open),ind:30,s:26,col:'#475569'}]:[]),...[...dep].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(x=>({t:'+ '+rs(x.amount)+'  |  '+B(x)+(x.note?'  |  '+x.note:''),ind:30,s:26,col:'#475569'}))])});
+    if(db.closings.length){d.head('पुराना क्लोजिङ');[...db.closings].reverse().forEach(c=>d.card([{t:B(c)+' — नाफा: '+rs(c.profit),b:1,s:30},{t:'बिक्री '+NEP(c.sold)+' वटा ('+rs(c.sales)+')  |  नगद: '+rs(c.cash)+'  |  उठ्न बाँकी: '+rs(c.receivable)+'  |  तिर्न बाँकी: '+rs(c.payable)+'  |  स्टक: '+NEP(c.stockCount)+' गाडी ('+rs(c.stockValue)+')',s:26}]))}
+    d.head('वासलात (Balance Sheet)');
+    for(const id of ['assets-table','liab-table'])d.card([...$(id).rows].map(r=>({t:r.cells[0].textContent+': '+r.cells[1].textContent,b:r.cells[0].tagName==='TH'})));
+    const pages=d.finish();
+    const jp=pages.map(u=>{const b=atob(u.split(',')[1]),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return{bytes:a,w:PW,h:PH}});
+    const r=await saveBlob(buildPDF(jp),'mahadev-report-'+todayISO()+'.pdf');
+    if(r==='ok')toast('PDF तयार भयो ('+NEP(pages.length)+' पेज)।');
+    else if(r==='declined')toast('PDF सेभ गरिएन।');
+    else{toast('फाइल सेभ भएन — तलका पेजहरू फोटोको रूपमा सेभ गर्नुहोस्।');showPages(pages)}
+  }catch(e){toast('PDF बनाउन सकिएन।')}
+}
+
+/* ---------- SEARCH / NAV ---------- */
+function handleSearch(){
+  const q=$('globalSearch').value.toLowerCase().trim(),panel=$('search-panel');
+  if(!q){panel.classList.add('hidden');return}
+  panel.classList.remove('hidden');
+  const r=[];
+  db.purchases.forEach(p=>{if([p.plate,p.owner,p.contact,p.model].some(v=>String(v||'').toLowerCase().includes(q)))r.push(`<div>[स्टक/खरिद] <strong>${esc(p.plate)}</strong> - ${esc(p.model)} | धनी: ${esc(p.owner)} (${esc(p.contact)})</div>`)});
+  db.tradeRP.forEach(t=>{if(String(t.person).toLowerCase().includes(q)||String(t.vehicle||'').toLowerCase().includes(q)||String(t.phone||'').includes(q))r.push(`<div>[लेनदेन - ${t.type}] <strong>${esc(t.person)}</strong> (${esc(t.vehicle)}) - ${rs(t.amount)} [${t.status}]</div>`)});
+  $('search-results-list').innerHTML=r.length?r.join('<hr style="margin:5px 0;border-color:#f1f5f9">'):'<p class="muted">कुनै नतिजा भेटिएन।</p>';
+}
+$('nav').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('.container > div').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('nav button').forEach(el=>el.classList.remove('active'));
+  $('tab-'+b.dataset.tab).classList.remove('hidden');b.classList.add('active');
+  $('search-panel').classList.add('hidden');$('globalSearch').value='';
+});
+async function closeMonthlyAccount(){
+  const sn=window.SNAP;
+  if(!await ask('आजको मितिमा ('+bsText({date:todayISO()})+') क्लोजिङ गर्ने? यस महिनाको नाफा '+rs(sn.profit)+' क्लोजिङमा सेभ हुन्छ र "यस महिनाको नाफा" शून्य भएर नयाँ महिना सुरु हुन्छ।'))return;
+  db.closings.push({ts:Date.now(),date:todayISO(),...sn});saveDB();
+  toast('क्लोजिङ सम्पन्न भयो। नयाँ महिनाको नाफा शून्यबाट सुरु।');
+}
+async function undoClosing(){
+  if(!db.closings.length){toast('रद्द गर्ने क्लोजिङ छैन।');return}
+  if(!await ask('पछिल्लो क्लोजिङ रद्द गर्ने? त्यो अवधिको नाफा फेरि "यस महिनाको नाफा" मा गनिन्छ।'))return;
+  db.closings.pop();saveDB();toast('पछिल्लो क्लोजिङ रद्द भयो।');
+}
+
+/* ---------- START ---------- */
+(async function(){
+  idb=await openIDB();
+  // move old inline base64 photos (from the previous version) into IndexedDB
+  if(idb){let moved=false;
+    for(const r of [...db.purchases,...db.garageExpenses]){
+      if(r.photo&&String(r.photo).startsWith('data:')){const id=newId();if(await putPhoto(id,r.photo)){r.photoId=id;delete r.photo;moved=true}}
+    }
+    if(moved)try{localStorage.setItem('mahadev_db',JSON.stringify(db))}catch(e){}
+  }
+  await purgeExpired();
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  resetDates();setToday();
+  renderAll();
+  if(!db.lastBackup||Date.now()-db.lastBackup>7*DAY)toast('बैकअप लिएको धेरै भयो — ड्यासबोर्डमा गएर बैकअप लिनुहोस्।');
+})();
+</script>
+</body>
+</html>
