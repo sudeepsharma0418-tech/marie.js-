@@ -305,15 +305,13 @@ async function allocate(
     }
     remaining = subMoney(remaining, a.amount);
     if (cmpMoney(remaining, '0') < 0) throw unprocessable('Allocations exceed the payment amount');
-    await tx
-      .insert(paymentAllocations)
-      .values({
-        paymentId: payment.id,
-        invoiceId: a.invoiceId ?? null,
-        billId: a.billId ?? null,
-        amount: a.amount,
-        createdBy: ctx.actor.id,
-      });
+    await tx.insert(paymentAllocations).values({
+      paymentId: payment.id,
+      invoiceId: a.invoiceId ?? null,
+      billId: a.billId ?? null,
+      amount: a.amount,
+      createdBy: ctx.actor.id,
+    });
   }
   if (allocations.length) {
     await audit(tx, ctx, {

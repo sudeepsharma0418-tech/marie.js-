@@ -11,6 +11,7 @@ import {
   time,
   date,
 } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { DELIVERY_STATUSES, HOTEL_MOVEMENT_TYPES, HUB_MOVEMENT_TYPES } from '@hp/shared';
 import { createdAt, inList, pk, qty, ts, updatedAt } from './_helpers';
 import { users } from './auth';
@@ -43,7 +44,7 @@ export const hubStockMovements = pgTable(
     orderLineId: uuid('order_line_id').references(() => orderLines.id),
     bin: text('bin'),
     reason: text('reason'),
-    approvalId: uuid('approval_id').references((): any => approvalRequests.id),
+    approvalId: uuid('approval_id').references((): AnyPgColumn => approvalRequests.id),
     actorId: uuid('actor_id')
       .notNull()
       .references(() => users.id),
@@ -146,8 +147,8 @@ export const deliveries = pgTable(
     confirmedBy: uuid('confirmed_by').references(() => users.id),
     recipientName: text('recipient_name'),
     recipientPhone: text('recipient_phone'),
-    signatureAttachmentId: uuid('signature_attachment_id').references((): any => attachments.id),
-    photoAttachmentId: uuid('photo_attachment_id').references((): any => attachments.id),
+    signatureAttachmentId: uuid('signature_attachment_id').references((): AnyPgColumn => attachments.id),
+    photoAttachmentId: uuid('photo_attachment_id').references((): AnyPgColumn => attachments.id),
     failureReason: text('failure_reason'),
     notes: text('notes'),
     createdBy: uuid('created_by')
@@ -206,7 +207,7 @@ export const hotelLocations = pgTable(
     hotelId: uuid('hotel_id')
       .notNull()
       .references(() => hotels.id),
-    parentId: uuid('parent_id').references((): any => hotelLocations.id),
+    parentId: uuid('parent_id').references((): AnyPgColumn => hotelLocations.id),
     kind: text('kind', { enum: ['area', 'shelf'] }).notNull(),
     name: text('name').notNull(),
     description: text('description'),

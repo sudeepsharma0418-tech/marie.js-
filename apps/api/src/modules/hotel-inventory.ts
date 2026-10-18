@@ -465,17 +465,15 @@ export async function hotelInventoryRoutes(app: FastifyInstance) {
           cmpQty(openingQty, '0') > 0 &&
           cmpQty(await shelfBalance(tx, id, productId), '0') === 0
         ) {
-          await tx
-            .insert(hotelStockMovements)
-            .values({
-              hotelId: loc.hotelId,
-              locationId: id,
-              productId,
-              movementType: 'opening',
-              quantity: openingQty,
-              actorId: ctx.actor.id,
-              occurredAt: new Date(),
-            });
+          await tx.insert(hotelStockMovements).values({
+            hotelId: loc.hotelId,
+            locationId: id,
+            productId,
+            movementType: 'opening',
+            quantity: openingQty,
+            actorId: ctx.actor.id,
+            occurredAt: new Date(),
+          });
         }
         await audit(tx, ctx, {
           action: 'shelf_product.saved',
@@ -720,18 +718,16 @@ export async function hotelInventoryRoutes(app: FastifyInstance) {
         if (body.decision === 'accept' && ev.action === 'correction' && ev.countedQty !== null) {
           delta = subQty(ev.countedQty, current);
           if (cmpQty(delta, '0') !== 0) {
-            await tx
-              .insert(hotelStockMovements)
-              .values({
-                hotelId: ev.hotelId,
-                locationId: ev.locationId,
-                productId: ev.productId,
-                movementType: 'correction',
-                quantity: delta,
-                eventId: ev.id,
-                actorId: ctx.actor.id,
-                occurredAt: new Date(),
-              });
+            await tx.insert(hotelStockMovements).values({
+              hotelId: ev.hotelId,
+              locationId: ev.locationId,
+              productId: ev.productId,
+              movementType: 'correction',
+              quantity: delta,
+              eventId: ev.id,
+              actorId: ctx.actor.id,
+              occurredAt: new Date(),
+            });
           }
         }
         await tx

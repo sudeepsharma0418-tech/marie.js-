@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { PAYMENT_METHODS } from '@hp/shared';
 import { createdAt, inList, money, percent, pk, qty, ts, updatedAt } from './_helpers';
 import { users } from './auth';
@@ -173,7 +174,7 @@ export const supplierBills = pgTable(
     taxableTotal: money('taxable_total').notNull().default('0.00'),
     taxTotal: money('tax_total').notNull().default('0.00'),
     total: money('total').notNull().default('0.00'),
-    attachmentId: uuid('attachment_id').references((): any => attachments.id),
+    attachmentId: uuid('attachment_id').references((): AnyPgColumn => attachments.id),
     notes: text('notes'),
     createdBy: uuid('created_by')
       .notNull()
@@ -224,7 +225,7 @@ export const payments = pgTable(
     reference: text('reference'),
     paymentDate: date('payment_date').notNull(),
     notes: text('notes'),
-    attachmentId: uuid('attachment_id').references((): any => attachments.id),
+    attachmentId: uuid('attachment_id').references((): AnyPgColumn => attachments.id),
     status: text('status', { enum: ['recorded', 'reversed'] })
       .notNull()
       .default('recorded'),
@@ -291,7 +292,7 @@ export const financialAdjustments = pgTable('financial_adjustments', {
   status: text('status', { enum: ['pending_approval', 'posted', 'rejected'] })
     .notNull()
     .default('pending_approval'),
-  approvalId: uuid('approval_id').references((): any => approvalRequests.id),
+  approvalId: uuid('approval_id').references((): AnyPgColumn => approvalRequests.id),
   createdBy: uuid('created_by')
     .notNull()
     .references(() => users.id),

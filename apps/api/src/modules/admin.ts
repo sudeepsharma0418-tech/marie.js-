@@ -159,13 +159,14 @@ export async function adminRoutes(app: FastifyInstance) {
       );
     } else {
       const hotelId = hotelFilter(ctx)!;
-      Object.assign(
-        out,
-        await one(sql`select
+      if (can(ctx, 'orders.read_own_hotel'))
+        Object.assign(
+          out,
+          await one(sql`select
           (select count(*)::int from orders where hotel_id = ${hotelId} and status not in ('draft','delivered','closed','cancelled','rejected')) as open_orders,
           (select count(*)::int from orders where hotel_id = ${hotelId} and status = 'pending_hotel_approval') as awaiting_my_approval,
           (select count(*)::int from orders where hotel_id = ${hotelId} and status = 'draft') as drafts`),
-      );
+        );
       if (can(ctx, 'finance.view_own_hotel')) {
         Object.assign(
           out,

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, date, index, integer, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { PO_COMMITTED_STATUSES, PO_STATUSES } from '@hp/shared';
 import { createdAt, inList, money, percent, pk, qty, ts, updatedAt } from './_helpers';
 import { users } from './auth';
@@ -32,7 +33,7 @@ export const purchaseOrders = pgTable(
       .notNull()
       .references(() => users.id),
     submittedAt: ts('submitted_at'),
-    approvalId: uuid('approval_id').references((): any => approvalRequests.id),
+    approvalId: uuid('approval_id').references((): AnyPgColumn => approvalRequests.id),
     approvedBy: uuid('approved_by').references(() => users.id),
     approvedAt: ts('approved_at'),
     sentAt: ts('sent_at'),

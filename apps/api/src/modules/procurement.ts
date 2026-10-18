@@ -511,15 +511,13 @@ export async function procurementRoutes(app: FastifyInstance) {
             actorId: ctx.actor.id,
           });
           if (pl.orderLineId) {
-            await tx
-              .insert(hubReservations)
-              .values({
-                productId: pl.productId,
-                orderLineId: pl.orderLineId,
-                quantity: l.qtyAccepted,
-                reason: 'receipt',
-                actorId: ctx.actor.id,
-              });
+            await tx.insert(hubReservations).values({
+              productId: pl.productId,
+              orderLineId: pl.orderLineId,
+              quantity: l.qtyAccepted,
+              reason: 'receipt',
+              actorId: ctx.actor.id,
+            });
           }
         }
         if (pl.orderLineId) {

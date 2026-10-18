@@ -10,6 +10,7 @@ import {
   integer,
   boolean,
 } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { APPROVAL_TYPES, ROLES } from '@hp/shared';
 import { createdAt, inList, money, pk, ts } from './_helpers';
@@ -26,15 +27,15 @@ export const approvalRequests = pgTable(
       .default('pending'),
     targetType: text('target_type').notNull(),
     targetId: uuid('target_id').notNull(),
-    hotelId: uuid('hotel_id').references((): any => hotels.id),
+    hotelId: uuid('hotel_id').references((): AnyPgColumn => hotels.id),
     amount: money('amount'),
     summary: text('summary').notNull(),
     details: jsonb('details'),
     requestedBy: uuid('requested_by')
       .notNull()
-      .references((): any => users.id),
+      .references((): AnyPgColumn => users.id),
     requestedAt: ts('requested_at').notNull().defaultNow(),
-    decidedBy: uuid('decided_by').references((): any => users.id),
+    decidedBy: uuid('decided_by').references((): AnyPgColumn => users.id),
     decidedAt: ts('decided_at'),
     decisionNote: text('decision_note'),
   },
@@ -54,7 +55,7 @@ export const notifications = pgTable(
     id: pk(),
     userId: uuid('user_id')
       .notNull()
-      .references((): any => users.id),
+      .references((): AnyPgColumn => users.id),
     kind: text('kind').notNull(),
     title: text('title').notNull(),
     body: text('body'),
@@ -82,7 +83,7 @@ export const attachments = pgTable(
     id: pk(),
     category: text('category', { enum: ATTACHMENT_CATEGORIES }).notNull(),
     /** Hotel the file belongs to, for tenant isolation. Null for internal files. */
-    hotelId: uuid('hotel_id').references((): any => hotels.id),
+    hotelId: uuid('hotel_id').references((): AnyPgColumn => hotels.id),
     /** Internal-only files (supplier bills, contracts drafts) are never shown to hotel users. */
     internalOnly: boolean('internal_only').notNull().default(true),
     fileName: text('file_name').notNull(),
@@ -92,7 +93,7 @@ export const attachments = pgTable(
     storageKey: text('storage_key').notNull().unique(),
     uploadedBy: uuid('uploaded_by')
       .notNull()
-      .references((): any => users.id),
+      .references((): AnyPgColumn => users.id),
     createdAt: createdAt(),
     deletedAt: ts('deleted_at'),
   },

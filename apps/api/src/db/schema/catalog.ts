@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, date, index, integer, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { createdAt, inList, money, pk, qty, updatedAt } from './_helpers';
 import { users } from './auth';
 import { hotels } from './hotels';
@@ -49,7 +50,7 @@ export const categories = pgTable(
   'categories',
   {
     id: pk(),
-    parentId: uuid('parent_id').references((): any => categories.id),
+    parentId: uuid('parent_id').references((): AnyPgColumn => categories.id),
     code: text('code').notNull().unique(),
     nameEn: text('name_en').notNull(),
     nameNe: text('name_ne').notNull(),
@@ -81,7 +82,7 @@ export const products = pgTable(
       .references(() => categories.id),
     brand: text('brand'),
     specifications: text('specifications'),
-    imageAttachmentId: uuid('image_attachment_id').references((): any => attachments.id),
+    imageAttachmentId: uuid('image_attachment_id').references((): AnyPgColumn => attachments.id),
     sellingUnit: text('selling_unit')
       .notNull()
       .references(() => units.code),
@@ -189,7 +190,7 @@ export const pricingRules = pgTable(
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id),
-    approvalId: uuid('approval_id').references((): any => approvalRequests.id),
+    approvalId: uuid('approval_id').references((): AnyPgColumn => approvalRequests.id),
     createdAt: createdAt(),
   },
   (t) => [

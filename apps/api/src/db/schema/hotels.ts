@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, date, index, integer, pgTable, text, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { createdAt, inList, money, pk, updatedAt } from './_helpers';
 import { users } from './auth';
 import { attachments } from './system';
@@ -34,7 +35,7 @@ export const hotels = pgTable(
     creditLimit: money('credit_limit').notNull().default('0.00'),
     paymentTermsDays: integer('payment_terms_days').notNull().default(15),
     status: text('status', { enum: HOTEL_STATUSES }).notNull().default('active'),
-    accountManagerId: uuid('account_manager_id').references((): any => users.id),
+    accountManagerId: uuid('account_manager_id').references((): AnyPgColumn => users.id),
     /** When true, orders prepared by hotel purchasing staff need the hotel manager's approval. */
     requireManagerApproval: boolean('require_manager_approval').notNull().default(true),
     notes: text('notes'),
@@ -62,13 +63,13 @@ export const hotelContracts = pgTable(
     effectiveFrom: date('effective_from').notNull(),
     effectiveTo: date('effective_to'),
     termsSummary: text('terms_summary'),
-    attachmentId: uuid('attachment_id').references((): any => attachments.id),
+    attachmentId: uuid('attachment_id').references((): AnyPgColumn => attachments.id),
     status: text('status', { enum: ['draft', 'active', 'superseded', 'expired'] })
       .notNull()
       .default('active'),
     uploadedBy: uuid('uploaded_by')
       .notNull()
-      .references((): any => users.id),
+      .references((): AnyPgColumn => users.id),
     createdAt: createdAt(),
   },
   (t) => [

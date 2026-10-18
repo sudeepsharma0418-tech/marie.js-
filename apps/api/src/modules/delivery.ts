@@ -412,16 +412,14 @@ export async function deliveryRoutes(app: FastifyInstance) {
         })
         .returning();
       const productOf = new Map(lines.map((l) => [l.id, l.productId]));
-      await tx
-        .insert(deliveryLines)
-        .values(
-          wanted.map((w) => ({
-            deliveryId: d!.id,
-            orderLineId: w.orderLineId,
-            productId: productOf.get(w.orderLineId)!,
-            qtyDispatched: w.quantity,
-          })),
-        );
+      await tx.insert(deliveryLines).values(
+        wanted.map((w) => ({
+          deliveryId: d!.id,
+          orderLineId: w.orderLineId,
+          productId: productOf.get(w.orderLineId)!,
+          qtyDispatched: w.quantity,
+        })),
+      );
       await addOrderEvent(tx, ctx, o.id, { event: 'delivery_scheduled', note: deliveryNumber });
       await audit(tx, ctx, {
         action: 'delivery.scheduled',
@@ -498,15 +496,13 @@ export async function deliveryRoutes(app: FastifyInstance) {
             reason: cur.deliveryNumber,
             actorId: ctx.actor.id,
           });
-          await tx
-            .insert(hubReservations)
-            .values({
-              productId: l.productId,
-              orderLineId: l.orderLineId,
-              quantity: `-${l.qtyDispatched}`,
-              reason: 'dispatch',
-              actorId: ctx.actor.id,
-            });
+          await tx.insert(hubReservations).values({
+            productId: l.productId,
+            orderLineId: l.orderLineId,
+            quantity: `-${l.qtyDispatched}`,
+            reason: 'dispatch',
+            actorId: ctx.actor.id,
+          });
         }
         const [u] = await tx
           .update(deliveries)
@@ -618,15 +614,13 @@ export async function deliveryRoutes(app: FastifyInstance) {
               reason: `Returned from ${cur.deliveryNumber}`,
               actorId: ctx.actor.id,
             });
-            await tx
-              .insert(hubReservations)
-              .values({
-                productId: l.productId,
-                orderLineId: l.orderLineId,
-                quantity: c.qtyReturned,
-                reason: 'delivery_return',
-                actorId: ctx.actor.id,
-              });
+            await tx.insert(hubReservations).values({
+              productId: l.productId,
+              orderLineId: l.orderLineId,
+              quantity: c.qtyReturned,
+              reason: 'delivery_return',
+              actorId: ctx.actor.id,
+            });
           }
         }
         const status: DeliveryStatus = allDelivered ? 'delivered' : 'partially_delivered';
@@ -697,15 +691,13 @@ export async function deliveryRoutes(app: FastifyInstance) {
             reason: `Failed delivery ${cur.deliveryNumber}: ${reason}`,
             actorId: ctx.actor.id,
           });
-          await tx
-            .insert(hubReservations)
-            .values({
-              productId: l.productId,
-              orderLineId: l.orderLineId,
-              quantity: l.qtyDispatched,
-              reason: 'delivery_return',
-              actorId: ctx.actor.id,
-            });
+          await tx.insert(hubReservations).values({
+            productId: l.productId,
+            orderLineId: l.orderLineId,
+            quantity: l.qtyDispatched,
+            reason: 'delivery_return',
+            actorId: ctx.actor.id,
+          });
         }
         const [u] = await tx
           .update(deliveries)

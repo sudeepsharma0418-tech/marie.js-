@@ -19,11 +19,14 @@
     "db:generate": "pnpm --filter @hp/api db:generate",
     "db:migrate": "pnpm --filter @hp/api db:migrate",
     "db:seed": "pnpm --filter @hp/api db:seed",
-    "db:reset": "pnpm --filter @hp/api db:reset"
+    "db:reset": "pnpm --filter @hp/api db:reset",
+    "e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
+    "@playwright/test": "1.56.1",
     "eslint": "^9.39.0",
+    "globals": "^17.13.0",
     "prettier": "^3.9.10",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.2"

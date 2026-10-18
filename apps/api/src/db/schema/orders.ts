@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { ORDER_STATUSES } from '@hp/shared';
 import { createdAt, inList, money, percent, pk, qty, ts, updatedAt } from './_helpers';
 import { users } from './auth';
@@ -146,7 +147,7 @@ export const productRequests = pgTable(
     quantity: qty('quantity').notNull(),
     unit: text('unit').notNull(),
     specifications: text('specifications'),
-    attachmentId: uuid('attachment_id').references((): any => attachments.id),
+    attachmentId: uuid('attachment_id').references((): AnyPgColumn => attachments.id),
     status: text('status', { enum: PRODUCT_REQUEST_STATUSES }).notNull().default('open'),
     quotedProductId: uuid('quoted_product_id').references(() => products.id),
     quotedUnitPrice: money('quoted_unit_price'),

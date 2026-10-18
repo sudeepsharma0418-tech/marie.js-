@@ -648,26 +648,22 @@ export async function seedDemo(db: Db, opts: { fastHash?: boolean } = {}): Promi
     const s2 = await shelf('HK shelf B – cleaning', hk.id);
     const s3 = await shelf('Kitchen rack 1', kitchen.id);
     const assign = async (loc: string, sku: string, usage: string, min: string, opening: string) => {
-      await tx
-        .insert(shelfProducts)
-        .values({
-          hotelId: hotelIds[0]!,
-          locationId: loc,
-          productId: productIds[sku]!,
-          defaultUsageQty: usage,
-          minQty: min,
-        });
-      await tx
-        .insert(hotelStockMovements)
-        .values({
-          hotelId: hotelIds[0]!,
-          locationId: loc,
-          productId: productIds[sku]!,
-          movementType: 'opening',
-          quantity: opening,
-          actorId: userIds.tinauManager!,
-          occurredAt: new Date(),
-        });
+      await tx.insert(shelfProducts).values({
+        hotelId: hotelIds[0]!,
+        locationId: loc,
+        productId: productIds[sku]!,
+        defaultUsageQty: usage,
+        minQty: min,
+      });
+      await tx.insert(hotelStockMovements).values({
+        hotelId: hotelIds[0]!,
+        locationId: loc,
+        productId: productIds[sku]!,
+        movementType: 'opening',
+        quantity: opening,
+        actorId: userIds.tinauManager!,
+        occurredAt: new Date(),
+      });
     };
     await assign(s1.id, 'AM-SHP-30', '2', '40', '120');
     await assign(s1.id, 'AM-SOP-20', '2', '40', '150');
