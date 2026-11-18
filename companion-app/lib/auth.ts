@@ -31,7 +31,7 @@ export async function getUser() {
   if (!session) return null;
   return db.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, username: true, bio: true },
   });
 }
 
@@ -40,4 +40,11 @@ export async function requireUser() {
   const user = await getUser();
   if (!user) redirect("/login");
   return user;
+}
+
+/** Like requireUser, but also sends people without a username to pick one. */
+export async function requireMember() {
+  const user = await requireUser();
+  if (!user.username) redirect("/welcome");
+  return { ...user, username: user.username };
 }

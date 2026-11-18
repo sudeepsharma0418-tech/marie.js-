@@ -1,0 +1,10 @@
+-- Runs before "prisma db push" on every deploy. Safe to run many times.
+-- Adds the username column and its unique index up front, so db push has
+-- nothing risky left to warn about. Existing accounts start with no username.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'User') THEN
+    ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "username" TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username");
+  END IF;
+END $$;

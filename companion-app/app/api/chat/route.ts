@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   const user = await getUser();
   if (!user) return text("You were logged out. Please log in again.", 401);
 
-  let body: { companionId?: string; message?: string };
+  let body: { conversationId?: string; message?: string; regenerate?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -25,19 +25,27 @@ export async function POST(req: Request) {
   }
 
   const message = (body.message ?? "").trim();
-  if (!body.companionId || !message) return text("Missing message", 400);
+  const regenerate = body.regenerate === true;
+  if (!body.conversationId || (!message && !regenerate)) return text("Missing message", 400);
   if (message.length > LIMITS.message) return text("That message is too long.", 400);
 
-  const companion = await db.companion.findFirst({
-    where: { id: body.companionId, userId: user.id },
+  // Your own conversation, with a companion you still have access to.
+  const convo = await db.conversation.findFirst({
+    where: {
+      id: body.conversationId,
+      userId: user.id,
+      companion: { OR: [{ isPublic: true }, { userId: user.id }] },
+    },
+    include: { companion: true },
   });
-  if (!companion) return text("Companion not found", 404);
+  if (!convo) return text("This companion is no longer available.", 404);
+  const companion = convo.companion;
 
   // Simple per user rate limit, counted from saved messages.
   const now = Date.now();
   const sentBy = (ms: number) =>
     db.message.count({
-      where: { role: "user", createdAt: { gte: new Date(now - ms) }, companion: { userId: user.id } },
+      where: { role: "user", createdAt: { gte: new Date(now - ms) }, conversation: { userId: user.id } },
     });
   const [lastMinute, lastDay] = await Promise.all([sentBy(60_000), sentBy(86_400_000)]);
   if (lastMinute >= RATE_LIMITS.perMinute) {
@@ -47,12 +55,26 @@ export async function POST(req: Request) {
     return text("You've hit today's message limit. Come back tomorrow!", 429);
   }
 
-  const userMessage = await db.message.create({
-    data: { companionId: companion.id, role: "user", content: message },
-  });
+  let userMessage: { id: string } | null = null;
+  if (regenerate) {
+    // Drop the last reply (if any) and answer the last user message again.
+    const lastMsg = await db.message.findFirst({
+      where: { conversationId: convo.id },
+      orderBy: { createdAt: "desc" },
+    });
+    if (lastMsg?.role === "assistant") {
+      const hasUser = await db.message.count({ where: { conversationId: convo.id, role: "user" } });
+      if (!hasUser) return text("Nothing to regenerate yet.", 400);
+      await db.message.delete({ where: { id: lastMsg.id } });
+    }
+  } else {
+    userMessage = await db.message.create({
+      data: { conversationId: convo.id, companionId: companion.id, role: "user", content: message },
+    });
+  }
 
   const recent = await db.message.findMany({
-    where: { companionId: companion.id },
+    where: { conversationId: convo.id },
     orderBy: { createdAt: "desc" },
     take: HISTORY,
   });
@@ -67,7 +89,7 @@ export async function POST(req: Request) {
     output_config: { effort: EFFORT },
     // Caches the system prompt and chat so far, so each new turn is cheaper and faster.
     cache_control: { type: "ephemeral" },
-    system: buildSystem(companion, user.name),
+    system: buildSystem({ ...companion, memory: convo.memory }, user.name),
     messages: history,
   });
 
@@ -77,7 +99,7 @@ export async function POST(req: Request) {
     await apiStream.withResponse();
   } catch (err) {
     console.error("Chat error:", err);
-    await db.message.delete({ where: { id: userMessage.id } }).catch(() => {});
+    if (userMessage) await db.message.delete({ where: { id: userMessage.id } }).catch(() => {});
     return text("Sorry, I can't reply right now. Please try again.", 502);
   }
 
@@ -91,9 +113,9 @@ export async function POST(req: Request) {
     if (saved || !reply.trim()) return;
     saved = true;
     await db.message.create({
-      data: { companionId: companion!.id, role: "assistant", content: reply.trim() },
+      data: { conversationId: convo!.id, companionId: companion.id, role: "assistant", content: reply.trim() },
     });
-    await db.companion.update({ where: { id: companion!.id }, data: { updatedAt: new Date() } });
+    await db.conversation.update({ where: { id: convo!.id }, data: { updatedAt: new Date() } });
   }
 
   const stream = new ReadableStream({
@@ -139,22 +161,23 @@ export async function POST(req: Request) {
   after(async () => {
     await done;
     try {
-      const count = await db.message.count({ where: { companionId: companion.id } });
+      if (regenerate) return;
+      const count = await db.message.count({ where: { conversationId: convo.id } });
       if (Math.floor(count / MEMORY_EVERY) === Math.floor((count - 2) / MEMORY_EVERY)) return;
 
       const latest = await db.message.findMany({
-        where: { companionId: companion.id },
+        where: { conversationId: convo.id },
         orderBy: { createdAt: "desc" },
         take: MEMORY_EVERY + 4,
       });
       const memory = await refreshMemory({
         companionName: companion.name,
         userName: user.name,
-        oldMemory: companion.memory,
+        oldMemory: convo.memory,
         transcript: toApiHistory(latest.reverse()),
       });
       if (memory) {
-        await db.companion.update({ where: { id: companion.id }, data: { memory: memory.slice(0, 4000) } });
+        await db.conversation.update({ where: { id: convo.id }, data: { memory: memory.slice(0, 4000) } });
       }
     } catch (err) {
       console.error("Memory update failed:", err);

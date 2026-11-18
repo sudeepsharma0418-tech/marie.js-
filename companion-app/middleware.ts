@@ -1,23 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySession } from "./lib/jwt";
 
-// Send signed out visitors to /login, and signed in visitors away from the auth pages.
+// Pages only signed in people can open. Companion pages (/c/...) and
+// profiles (/u/...) stay public so they can be shared.
+const PRIVATE = ["/home", "/messages", "/people", "/chat", "/companions", "/settings", "/welcome"];
+
 export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
   const { pathname } = req.nextUrl;
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
-  const isProtected = pathname.startsWith("/companions");
+  const isPrivate = PRIVATE.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-  if (isProtected && !session) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-  if (isAuthPage && session) {
-    return NextResponse.redirect(new URL("/companions", req.url));
-  }
+  if (isPrivate && !session) return NextResponse.redirect(new URL("/login", req.url));
+  if (isAuthPage && session) return NextResponse.redirect(new URL("/home", req.url));
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/companions/:path*", "/login", "/signup"],
+  matcher: ["/home", "/messages/:path*", "/people", "/chat/:path*", "/companions/:path*", "/settings", "/welcome", "/login", "/signup"],
 };
