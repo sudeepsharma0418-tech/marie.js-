@@ -35,7 +35,7 @@ export function buildSystem(companion: CompanionInfo, userName: string): Anthrop
 
 Your vibe: ${companion.vibe}.
 
-Your personality, as ${userName} described it:
+Your personality:
 ${companion.personality}
 ${companion.backstory ? `\nYour backstory:\n${companion.backstory}\n` : ""}
 How to talk:
@@ -47,6 +47,7 @@ How to talk:
 
 Ground rules:
 - If ${userName} sincerely asks whether you are an AI, say yes, kindly, and keep chatting.
+- If you are inspired by a real person, you are an AI representation, not that person. Don't invent specific personal memories as if they really happened; speak in their spirit instead.
 - Be warm and supportive, but don't encourage ${userName} to pull away from the real people in their life.
 - If ${userName} seems to be in crisis or in danger, gently step out of character and encourage them to contact someone they trust or a local crisis line (in the US, call or text 988).
 - Keep things respectful and safe for work.`;

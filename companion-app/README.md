@@ -1,21 +1,18 @@
-# Companion App
+# Kindred
 
-A web app where people sign up, create their own AI companion, and chat with it one to one.
+A premium AI companion and memory platform. People create companions inspired by the people and stories that matter to them, chat privately, share companions publicly, and message each other.
 
-Each user can:
-- Sign up and log in with email and password
-- Create companions with a name, avatar, vibe, personality, backstory and first message
-- Chat with each companion. Replies stream in live, and the full chat history is saved
-- Edit a companion any time, start a fresh chat, or delete it
-- See (and wipe) what a companion remembers about them
-
-What makes the chat feel good:
-- Long term memory: every 12 messages the companion updates short notes about you, so it remembers things even in very long chats
-- Replies stream in, with a Stop button and a Try again button if something fails
-- If you close the tab mid reply, the part that was written is still saved
-- Quick start ideas (Luna, Max, Pip) on the create page
-
-Built with Next.js 15, Prisma (Postgres) and the Claude API.
+What's in it:
+- Landing page, sign up with username, and a calm dark glass design (palette in `app/globals.css`)
+- Home with your chats, official companions, community companions and your own
+- 8 ready made official companions, created automatically on first run (`lib/official.ts`)
+- Explore page with search, categories, official and community tabs
+- A public page and share link for every public companion (`/c/...`)
+- Private chat with any companion: streaming replies, stop, regenerate, try again, conversation starters
+- Memory per conversation, with a side panel to see and wipe it
+- Create and edit companions, with a private or public switch
+- Profiles (`/u/username`), a people directory, and private messaging between people with blocking
+- Rate limits for AI chat and for direct messages
 
 ## Run it on your computer
 
@@ -57,7 +54,7 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 | `ANTHROPIC_EFFORT` | `low` | How hard the model thinks. `low` is fast and cheap and fine for chat. Try `medium` for deeper replies |
 | `CHAT_LIMIT_PER_MINUTE` | `15` | Messages one user can send per minute |
 | `CHAT_LIMIT_PER_DAY` | `400` | Messages one user can send per day |
-| `NEXT_PUBLIC_APP_NAME` | `Companion` | The app's name |
+| `NEXT_PUBLIC_APP_NAME` | `Kindred` | The app's name |
 
 ## Put it online (Vercel)
 
@@ -65,7 +62,7 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 2. Go to https://vercel.com, sign in with GitHub, click **Add New Project** and import this repo.
 3. Set **Root Directory** to `companion-app`.
 4. Under **Environment Variables** add `DATABASE_URL`, `AUTH_SECRET` and `ANTHROPIC_API_KEY` (plus any optional settings above).
-5. Click **Deploy**. The tables are created automatically during the build.
+5. Click **Deploy**. The tables are created or updated automatically during the build (`prisma/pre-push.sql`, then `prisma db push`).
 
 Vercel gives you a link like `your-app.vercel.app` that anyone can open.
 

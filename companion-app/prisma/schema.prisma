@@ -10,40 +10,118 @@ datasource db {
 }
 
 model User {
-  id           String      @id @default(cuid())
-  email        String      @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String
+  // Public handle, e.g. /u/sam. Optional only so older accounts can pick one later.
+  username     String?  @unique
+  bio          String   @default("")
   passwordHash String
-  createdAt    DateTime    @default(now())
-  companions   Companion[]
+  isSystem     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  companions     Companion[]
+  conversations  Conversation[]
+  threadsAsA     DirectThread[]  @relation("ThreadUserA")
+  threadsAsB     DirectThread[]  @relation("ThreadUserB")
+  directMessages DirectMessage[]
+  blocking       Block[]         @relation("Blocker")
+  blockedBy      Block[]         @relation("Blocked")
 }
 
 model Companion {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  avatar      String   @default("blue")
+  vibe        String   @default("Friendly")
+  tagline     String   @default("")
+  category    String   @default("Friends")
+  personality String
+  backstory   String   @default("")
+  greeting    String   @default("")
+  // Old per companion memory. Memory now lives on each conversation.
+  memory      String   @default("")
+  isPublic    Boolean  @default(false)
+  isOfficial  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages      Message[]
+  conversations Conversation[]
+
+  @@index([userId])
+  @@index([isPublic, updatedAt])
+}
+
+// One person's private chat with one companion. Many people can chat with the
+// same public companion, each in their own conversation.
+model Conversation {
   id          String    @id @default(cuid())
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  avatar      String    @default("✨")
-  vibe        String    @default("Friendly")
-  personality String
-  backstory   String    @default("")
-  greeting    String    @default("")
-  // Short notes the companion keeps about the user, refreshed as the chat grows.
+  companionId String
+  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
   memory      String    @default("")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   messages    Message[]
 
-  @@index([userId])
+  @@unique([userId, companionId])
+  @@index([userId, updatedAt])
 }
 
 model Message {
-  id          String    @id @default(cuid())
-  companionId String
-  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
-  role        String // "user" or "assistant"
-  content     String
-  createdAt   DateTime  @default(now())
+  id             String        @id @default(cuid())
+  companionId    String
+  companion      Companion     @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // "user" or "assistant"
+  content        String
+  createdAt      DateTime      @default(now())
 
   @@index([companionId, createdAt])
+  @@index([conversationId, createdAt])
+}
+
+// Person to person messages. userAId is always the smaller id of the pair.
+model DirectThread {
+  id        String          @id @default(cuid())
+  userAId   String
+  userA     User            @relation("ThreadUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId   String
+  userB     User            @relation("ThreadUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  lastAt    DateTime        @default(now())
+  createdAt DateTime        @default(now())
+  messages  DirectMessage[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, lastAt])
+  @@index([userBId, lastAt])
+}
+
+model DirectMessage {
+  id        String       @id @default(cuid())
+  threadId  String
+  thread    DirectThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  readAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+// Someone who blocked another person. Blocked people can't message the blocker.
+model Block {
+  blockerId String
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
 }
