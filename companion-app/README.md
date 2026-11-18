@@ -15,7 +15,7 @@ What makes the chat feel good:
 - If you close the tab mid reply, the part that was written is still saved
 - Quick start ideas (Luna, Max, Pip) on the create page
 
-Built with Next.js 15, Prisma (SQLite locally, Postgres in production) and the Claude API.
+Built with Next.js 15, Prisma (Postgres) and the Claude API.
 
 ## Run it on your computer
 
@@ -30,6 +30,7 @@ You need Node.js 20 or newer.
    cp .env.example .env
    ```
    Open `.env` and fill in:
+   - `DATABASE_URL`: a Postgres connection string. Make a free database at https://neon.tech and copy its connection string
    - `AUTH_SECRET`: any long random string. You can make one with `openssl rand -base64 32`
    - `ANTHROPIC_API_KEY`: your key from https://console.anthropic.com
 3. Create the database
@@ -60,13 +61,13 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 
 ## Put it online (Vercel)
 
-1. Push the project to a GitHub repo.
-2. Make a free Postgres database (Neon, Supabase or Vercel Postgres all work).
-3. In `prisma/schema.prisma`, change `provider = "sqlite"` to `provider = "postgresql"`.
-4. Import the repo on vercel.com and add these environment variables:
-   `DATABASE_URL`, `AUTH_SECRET`, `ANTHROPIC_API_KEY`, and any of the optional settings above.
-5. Run `npx prisma db push` once with the production `DATABASE_URL` to create the tables.
-6. Deploy.
+1. Make a free Postgres database at https://neon.tech and copy its connection string.
+2. Go to https://vercel.com, sign in with GitHub, click **Add New Project** and import this repo.
+3. Set **Root Directory** to `companion-app`.
+4. Under **Environment Variables** add `DATABASE_URL`, `AUTH_SECRET` and `ANTHROPIC_API_KEY` (plus any optional settings above).
+5. Click **Deploy**. The tables are created automatically during the build.
+
+Vercel gives you a link like `your-app.vercel.app` that anyone can open.
 
 ## Where things are
 
@@ -92,4 +93,4 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 
 ## Updating from the first version
 
-The database got two new columns (`greeting` and `memory`). Run `npm install` and then `npm run db:push` once. Your existing users, companions and chats are kept.
+The app now uses Postgres instead of a local SQLite file, and the database has two new columns (`greeting` and `memory`). Set `DATABASE_URL` to a Postgres database, then run `npm install` and `npm run db:push` once.

@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// SQLite for local development. For production change provider to
-// "postgresql" and point DATABASE_URL at your Postgres database.
+// Postgres, so the app can run online (Vercel). A free Neon database works
+// for both local development and production.
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
