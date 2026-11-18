@@ -53,7 +53,7 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `ANTHROPIC_MODEL` | `claude-sonnet-5-5` | Which Claude model the companions use |
+| `ANTHROPIC_MODEL` | `claude-sonnet-5-5` | Which Claude model the companions use. `claude-haiku-5-5` is about 20 times cheaper |
 | `ANTHROPIC_EFFORT` | `low` | How hard the model thinks. `low` is fast and cheap and fine for chat. Try `medium` for deeper replies |
 | `CHAT_LIMIT_PER_MINUTE` | `15` | Messages one user can send per minute |
 | `CHAT_LIMIT_PER_DAY` | `400` | Messages one user can send per day |
