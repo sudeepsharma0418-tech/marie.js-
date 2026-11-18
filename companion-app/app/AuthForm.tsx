@@ -13,19 +13,16 @@ export default function AuthForm({ mode, appName }: { mode: "login" | "signup"; 
     <main className="auth">
       <aside className="auth-side">
         <Link href="/" className="brand" style={{ padding: 0 }}><Logo /> {appName}</Link>
-        <div className="stack">
-          <p className="display">&ldquo;It asked how my sister&apos;s wedding went. I told it about that <em>a month ago.</em>&rdquo;</p>
-          <span className="muted small">What memory feels like</span>
-        </div>
-        <span className="faint small">Companions are AI. Your chats stay private.</span>
+        <blockquote>Some memories deserve to live forever.</blockquote>
+        <span className="faint small">Private by default. Companions are AI, never the real person.</span>
       </aside>
 
       <div className="auth-main">
         <form action={action} className="auth-card">
           <div className="stack" style={{ gap: 8 }}>
             <h1>{isSignup ? "Create your account" : "Welcome back"}</h1>
-            <p className="muted">
-              {isSignup ? "Takes 20 seconds. Free to start." : "Log in to pick up where you left off."}
+            <p className="muted small">
+              {isSignup ? "Free during early access." : "Log in to continue."}
             </p>
           </div>
 
@@ -68,15 +65,15 @@ export default function AuthForm({ mode, appName }: { mode: "login" | "signup"; 
 
           {state?.error && <p className="error" role="alert">{state.error}</p>}
 
-          <button className="btn primary lg full" disabled={pending}>
+          <button className="btn primary lg full" disabled={pending} style={{ marginTop: 4 }}>
             {pending ? "One moment..." : isSignup ? "Create account" : "Log in"}
           </button>
 
           <p className="muted small center">
             {isSignup ? (
-              <>Already have an account? <Link href="/login" style={{ color: "var(--sky)" }}>Log in</Link></>
+              <>Already have an account? <Link href="/login" style={{ color: "var(--primary-hover)" }}>Log in</Link></>
             ) : (
-              <>New here? <Link href="/signup" style={{ color: "var(--sky)" }}>Create an account</Link></>
+              <>New here? <Link href="/signup" style={{ color: "var(--primary-hover)" }}>Create an account</Link></>
             )}
           </p>
         </form>
