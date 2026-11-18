@@ -14,7 +14,9 @@ export const EFFORT: Effort = EFFORTS.includes(process.env.ANTHROPIC_EFFORT as E
 
 // If the model declines a message for safety reasons, the API retries it on a
 // fallback model in the same call instead of just stopping.
+// Only some models support this. Haiku does not, so it is skipped there.
 export const FALLBACK_BETA = "server-side-fallback-2026-07-01";
+export const SUPPORTS_FALLBACK = ["claude-sonnet-5-5", "claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-fable-5-2"].includes(MODEL);
 
 type CompanionInfo = {
   name: string;

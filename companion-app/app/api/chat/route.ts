@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { getUser } from "@/lib/auth";
-import { anthropic, buildSystem, EFFORT, FALLBACK_BETA, MODEL, refreshMemory, toApiHistory } from "@/lib/ai";
+import { anthropic, buildSystem, EFFORT, FALLBACK_BETA, MODEL, refreshMemory, SUPPORTS_FALLBACK, toApiHistory } from "@/lib/ai";
 import { LIMITS, MEMORY_EVERY, RATE_LIMITS } from "@/lib/config";
 
 export const runtime = "nodejs";
@@ -63,8 +63,7 @@ export async function POST(req: Request) {
   const apiStream = anthropic.beta.messages.stream({
     model: MODEL,
     max_tokens: 4000,
-    betas: [FALLBACK_BETA],
-    fallbacks: "default",
+    ...(SUPPORTS_FALLBACK ? { betas: [FALLBACK_BETA], fallbacks: "default" as const } : {}),
     output_config: { effort: EFFORT },
     // Caches the system prompt and chat so far, so each new turn is cheaper and faster.
     cache_control: { type: "ephemeral" },
