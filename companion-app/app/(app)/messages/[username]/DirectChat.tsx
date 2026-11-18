@@ -100,7 +100,7 @@ export default function DirectChat({
   const blocked = iBlocked || theyBlocked;
 
   return (
-    <main className="chat">
+    <div className="page-chat"><main className="chat">
       <div className="chat-head">
         <Link href="/messages" className="btn quiet icon-btn" aria-label="Back"><BackIcon /></Link>
         <Link href={`/u/${them.username}`}><PersonAvatar name={them.name} size={40} /></Link>
@@ -172,6 +172,6 @@ export default function DirectChat({
           </form>
         )}
       </div>
-    </main>
+    </main></div>
   );
 }

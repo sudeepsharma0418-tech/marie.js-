@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="landing">
         <header className="land-nav">
           <div className="inner">
-            <Link href="/" className="brand" style={{ padding: 0 }}><Logo /> {APP_NAME}</Link>
+            <Link href="/" className="brand"><Logo /> {APP_NAME}</Link>
             <div className="row">
               <Link href="/login" className="btn quiet sm">Log in</Link>
               <Link href="/signup" className="btn primary sm">Get started</Link>
@@ -35,20 +35,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <Link href="/home" className="brand"><Logo /> {APP_NAME}</Link>
-        <nav className="stack" style={{ gap: 4 }} aria-label="Main">
-          <NavLinks unread={unread} />
-        </nav>
-        <div className="spacer" />
-        <Link href="/settings" className="me">
-          <PersonAvatar name={user.name} size={34} />
-          <div className="grow">
-            <div className="truncate small" style={{ fontWeight: 600 }}>{user.name}</div>
-            <div className="truncate tiny faint">@{user.username ?? "pick a username"}</div>
-          </div>
-        </Link>
-      </aside>
+      <header className="topbar">
+        <div className="inner">
+          <Link href="/home" className="brand"><Logo /> {APP_NAME}</Link>
+          <nav className="topnav" aria-label="Main">
+            <NavLinks unread={unread} />
+          </nav>
+          <Link href="/settings" className="me" aria-label="Settings">
+            <PersonAvatar name={user.name} size={34} />
+            <span>{user.name}</span>
+          </Link>
+        </div>
+      </header>
       <div className="main">{children}</div>
       <nav className="tabbar" aria-label="Main">
         <NavLinks unread={unread} />

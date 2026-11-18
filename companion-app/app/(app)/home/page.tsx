@@ -41,7 +41,7 @@ export default async function Home() {
       <header className="row between wrap" style={{ alignItems: "flex-end" }}>
         <div>
           <p className="muted">{greeting()},</p>
-          <h1 className="serif" style={{ fontSize: "2.6rem", lineHeight: 1.1, marginTop: 4 }}>{first}</h1>
+          <h1 className="serif" style={{ fontSize: "3rem", lineHeight: 1.05, marginTop: 2 }}>{first}</h1>
         </div>
         <Link href="/companions/new" className="btn primary">New companion</Link>
       </header>
@@ -79,12 +79,12 @@ export default async function Home() {
         {mine.length > 0 ? (
           <div className="grid">{mine.map((c) => <CompanionCard key={c.id} c={c} showPrivacy />)}</div>
         ) : (
-          <div className="panel pad row between wrap">
+          <div className="ink-panel row between wrap" style={{ padding: 32, gap: 20 }}>
             <div>
-              <h3>Create your first companion</h3>
-              <p className="small muted" style={{ marginTop: 4 }}>Someone you love, a mentor, or a character. Private unless you share it.</p>
+              <h3 style={{ fontSize: "1.6rem", fontWeight: 400, letterSpacing: "-0.02em" }}>Keep their stories close.</h3>
+              <p className="muted" style={{ marginTop: 6 }}>Someone you love, a mentor, or a character. Private unless you share it.</p>
             </div>
-            <Link href="/companions/new" className="btn outline">Get started</Link>
+            <Link href="/companions/new" className="btn light lg">Create your first companion</Link>
           </div>
         )}
       </section>
