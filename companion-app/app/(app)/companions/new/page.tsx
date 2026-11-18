@@ -8,8 +8,7 @@ export default async function NewCompanionPage() {
   return (
     <main className="page narrow">
       <div>
-        <span className="eyebrow">Create</span>
-        <h1 className="display" style={{ fontSize: "2.4rem", fontWeight: 400, marginTop: 8 }}>Bring someone <em>to life</em></h1>
+        <h1>Create a companion</h1>
         <p className="muted" style={{ marginTop: 8 }}>A mentor, a friend, a character, or someone you want to remember. Private unless you choose to share.</p>
       </div>
       <CompanionForm />

@@ -22,9 +22,10 @@ export const ShareIcon = (p: P) => (<svg {...base} {...p}><path d="M12 15V3M7 8l
 export function Logo() {
   return (
     <span className="logo" aria-hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f1efea" strokeWidth="2.4" strokeLinecap="round">
         <path d="M8 6.5a4 4 0 1 0 0 11M16 6.5a4 4 0 1 1 0 11" />
       </svg>
     </span>
   );
 }
+export const BookIcon = (p: P) => (<svg {...base} {...p}><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 21V5M8 7h7" /></svg>);

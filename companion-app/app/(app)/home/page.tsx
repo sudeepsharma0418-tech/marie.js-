@@ -4,34 +4,32 @@ import { requireMember } from "@/lib/auth";
 import { timeAgo } from "@/lib/social";
 import { Avatar } from "@/components/Avatar";
 import CompanionCard, { cardSelect } from "@/components/CompanionCard";
-import { PlusIcon } from "@/components/Icons";
 
 export const metadata = { title: "Home" };
 
 function greeting() {
   const h = new Date().getHours();
-  return h < 5 ? "Up late" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  return h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 }
 
 export default async function Home() {
   const user = await requireMember();
 
-  const [chats, mine, official, community] = await Promise.all([
+  const [chats, mine, suggested] = await Promise.all([
     db.conversation.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: "desc" },
-      take: 8,
+      take: 6,
       include: {
         companion: { select: { name: true, avatar: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1, select: { content: true, role: true } },
       },
     }),
-    db.companion.findMany({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, select: cardSelect }),
-    db.companion.findMany({ where: { isOfficial: true }, orderBy: { createdAt: "asc" }, take: 4, select: cardSelect }),
+    db.companion.findMany({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, take: 6, select: cardSelect }),
     db.companion.findMany({
-      where: { isPublic: true, isOfficial: false, userId: { not: user.id } },
-      orderBy: { updatedAt: "desc" },
-      take: 4,
+      where: { isPublic: true, userId: { not: user.id }, conversations: { none: { userId: user.id } } },
+      orderBy: [{ isOfficial: "desc" }, { conversations: { _count: "desc" } }],
+      take: 3,
       select: cardSelect,
     }),
   ]);
@@ -40,27 +38,27 @@ export default async function Home() {
 
   return (
     <main className="page">
-      <div className="page-head">
+      <header className="row between wrap" style={{ alignItems: "flex-end" }}>
         <div>
-          <p className="muted small">{greeting()},</p>
-          <h1 className="display" style={{ fontSize: "2.6rem", fontWeight: 400 }}>{first}</h1>
+          <p className="muted">{greeting()},</p>
+          <h1 className="serif" style={{ fontSize: "3rem", lineHeight: 1.05, marginTop: 2 }}>{first}</h1>
         </div>
-        <Link href="/companions/new" className="btn primary"><PlusIcon className="" /> New companion</Link>
-      </div>
+        <Link href="/companions/new" className="btn primary">New companion</Link>
+      </header>
 
-      {chats.length > 0 ? (
-        <section>
-          <div className="section-head"><h2>Continue chatting</h2></div>
-          <div className="panel list">
+      <section>
+        <div className="section-head"><h2>Recent conversations</h2></div>
+        {chats.length > 0 ? (
+          <div className="list">
             {chats.map((c) => {
               const last = c.messages[0];
               return (
                 <Link key={c.id} href={`/chat/${c.id}`} className="list-item">
-                  <Avatar name={c.companion.name} avatar={c.companion.avatar} size={44} />
+                  <Avatar name={c.companion.name} avatar={c.companion.avatar} size={40} />
                   <div className="grow">
                     <strong>{c.companion.name}</strong>
                     <p className="small muted truncate">
-                      {last ? `${last.role === "user" ? "You: " : ""}${last.content}` : "Say hi"}
+                      {last ? `${last.role === "user" ? "You: " : ""}${last.content}` : "Say hello"}
                     </p>
                   </div>
                   <span className="when">{timeAgo(c.updatedAt)}</span>
@@ -68,37 +66,35 @@ export default async function Home() {
               );
             })}
           </div>
-        </section>
-      ) : (
-        <section className="panel empty">
-          <p className="display">Who do you want to talk to?</p>
-          <p className="muted">Pick someone below, or make your own companion in a minute.</p>
-        </section>
-      )}
-
-      <section>
-        <div className="section-head"><h2>Official companions</h2><Link href="/discover">See all</Link></div>
-        <div className="grid">{official.map((c) => <CompanionCard key={c.id} c={c} />)}</div>
+        ) : (
+          <p className="muted">No conversations yet. Create a companion, or start with someone below.</p>
+        )}
       </section>
 
-      {community.length > 0 && (
-        <section>
-          <div className="section-head"><h2>New from the community</h2><Link href="/discover?tab=community">Explore</Link></div>
-          <div className="grid">{community.map((c) => <CompanionCard key={c.id} c={c} />)}</div>
-        </section>
-      )}
-
       <section>
-        <div className="section-head"><h2>Made by you</h2><Link href="/companions/new">Create</Link></div>
+        <div className="section-head">
+          <h2>Your companions</h2>
+          {mine.length > 0 && <Link href={`/u/${user.username}`}>View all</Link>}
+        </div>
         {mine.length > 0 ? (
           <div className="grid">{mine.map((c) => <CompanionCard key={c.id} c={c} showPrivacy />)}</div>
         ) : (
-          <Link href="/companions/new" className="card" style={{ alignItems: "center", justifyContent: "center", minHeight: 140, borderStyle: "dashed" }}>
-            <PlusIcon className="faint big-icon" />
-            <span className="muted small">Create your first companion</span>
-          </Link>
+          <div className="ink-panel row between wrap" style={{ padding: 32, gap: 20 }}>
+            <div>
+              <h3 style={{ fontSize: "1.6rem", fontWeight: 400, letterSpacing: "-0.02em" }}>Keep their stories close.</h3>
+              <p className="muted" style={{ marginTop: 6 }}>Someone you love, a mentor, or a character. Private unless you share it.</p>
+            </div>
+            <Link href="/companions/new" className="btn light lg">Create your first companion</Link>
+          </div>
         )}
       </section>
+
+      {suggested.length > 0 && (
+        <section>
+          <div className="section-head"><h2>You might like</h2><Link href="/discover">Explore</Link></div>
+          <div className="grid">{suggested.map((c) => <CompanionCard key={c.id} c={c} />)}</div>
+        </section>
+      )}
     </main>
   );
 }

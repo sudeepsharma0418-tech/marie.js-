@@ -46,9 +46,8 @@ export default async function Discover({ searchParams }: { searchParams: Promise
     <main className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Explore</span>
-          <h1 className="display" style={{ fontSize: "2.6rem", fontWeight: 400, marginTop: 8 }}>
-            Find someone to <em>talk to</em>
+          <h1>
+            Explore
           </h1>
           <p className="muted" style={{ marginTop: 8 }}>Every conversation is private to you, whoever made the companion.</p>
         </div>

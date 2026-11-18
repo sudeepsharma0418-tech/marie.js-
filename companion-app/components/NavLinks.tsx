@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChatIcon, CompassIcon, HomeIcon, PlusIcon, UsersIcon } from "./Icons";
 
 const LINKS = [
-  { href: "/home", label: "Home", Icon: HomeIcon },
+  { href: "/home", label: "Overview", Icon: HomeIcon },
   { href: "/discover", label: "Discover", Icon: CompassIcon },
   { href: "/messages", label: "Messages", Icon: ChatIcon },
   { href: "/people", label: "People", Icon: UsersIcon },

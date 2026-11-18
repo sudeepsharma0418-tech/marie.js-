@@ -32,8 +32,7 @@ export default async function People({ searchParams }: { searchParams: Promise<{
     <main className="page">
       <div className="page-head">
         <div>
-          <span className="eyebrow">Community</span>
-          <h1 className="display" style={{ fontSize: "2.6rem", fontWeight: 400, marginTop: 8 }}>The people <em>behind</em> the companions</h1>
+          <h1>People</h1>
         </div>
       </div>
       <form className="search" action="/people" role="search">
