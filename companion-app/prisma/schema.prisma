@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Postgres, so the app can run online (Vercel). A free Neon database works
+// for both local development and production.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  companions   Companion[]
+}
+
+model Companion {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  avatar      String    @default("✨")
+  vibe        String    @default("Friendly")
+  personality String
+  backstory   String    @default("")
+  greeting    String    @default("")
+  // Short notes the companion keeps about the user, refreshed as the chat grows.
+  memory      String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+
+  @@index([userId])
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  companionId String
+  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  role        String // "user" or "assistant"
+  content     String
+  createdAt   DateTime  @default(now())
+
+  @@index([companionId, createdAt])
+}
