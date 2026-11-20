@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { APP_NAME } from "./config";
 
 // Ready made companions everyone can chat with. They belong to a hidden
 // system account and are created automatically the first time the app runs.
@@ -118,11 +119,11 @@ export function ensureSetup() {
 async function setup() {
   const system = await db.user.upsert({
     where: { email: SYSTEM_EMAIL },
-    update: {},
+    update: { name: `${APP_NAME} Team` },
     create: {
       email: SYSTEM_EMAIL,
-      name: "Kindred Team",
-      username: "kindred",
+      name: `${APP_NAME} Team`,
+      username: "memorylane",
       bio: "The team behind the official companions.",
       passwordHash: "!",
       isSystem: true,

@@ -1,5 +1,5 @@
 // Change the app name here (or set NEXT_PUBLIC_APP_NAME in .env).
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Kindred";
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "MemoryLane";
 
 export const TAGLINE = "AI companions that remember you, and a community to share them with.";
 

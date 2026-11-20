@@ -8,7 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { BackIcon, BrainIcon, DotsIcon, SendIcon, StopIcon } from "@/components/Icons";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
-type CompanionProps = { id: string; name: string; avatar: string; vibe: string; tagline: string; isOwner: boolean };
+type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; vibe: string; tagline: string; isOwner: boolean };
 
 const STARTERS = ["Tell me about yourself", "I had a long day", "Ask me something interesting", "Can you help me think something through?"];
 
@@ -136,7 +136,7 @@ export default function Chat({
       <main className="chat" style={{ height: "auto", minHeight: 0 }}>
         <div className="chat-head">
           <Link href="/home" className="btn quiet icon-btn" aria-label="Back"><BackIcon /></Link>
-          <Link href={`/c/${companion.id}`}><Avatar name={companion.name} avatar={companion.avatar} size={40} /></Link>
+          <Link href={`/c/${companion.id}`}><Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} size={40} /></Link>
           <div className="grow">
             <Link href={`/c/${companion.id}`}><strong>{companion.name}</strong></Link>
             <div className={`sub ${busy ? "typing" : ""}`} aria-live="polite">{busy ? "typing..." : `${companion.vibe} · AI companion`}</div>
@@ -182,7 +182,7 @@ export default function Chat({
         >
           <div className="messages-inner">
             <div className="intro">
-              <Avatar name={companion.name} avatar={companion.avatar} size={72} />
+              <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} size={72} />
               <p className="display">{companion.name}</p>
               {companion.tagline && <p className="muted small">{companion.tagline}</p>}
               <p className="tiny faint">An AI companion. It can make mistakes and is not a real person.</p>
@@ -191,7 +191,7 @@ export default function Chat({
               const cont = i > 0 && messages[i - 1].role === m.role;
               return (
                 <div key={m.id} className={`bubble-row ${m.role} ${cont ? "cont" : ""}`}>
-                  {m.role === "assistant" && <Avatar name={companion.name} avatar={companion.avatar} size={28} />}
+                  {m.role === "assistant" && <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} size={28} />}
                   <div className={`bubble ${m.role} ${m.failed ? "failed" : ""}`}>
                     {m.content || (
                       <span className="dots" aria-label={`${companion.name} is typing`}><i /><i /><i /></span>
