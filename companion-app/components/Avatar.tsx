@@ -1,8 +1,25 @@
 import { AVATARS } from "@/lib/config";
 
 /** Companion avatar: a tinted circle with the first letter, or an old emoji avatar. */
-export function Avatar({ name, avatar, size = 44 }: { name: string; avatar: string; size?: number }) {
+export function Avatar({
+  name,
+  avatar,
+  photoId,
+  size = 44,
+}: {
+  name: string;
+  avatar: string;
+  photoId?: string | null;
+  size?: number;
+}) {
   const style = { "--size": `${size}px` } as React.CSSProperties;
+  if (photoId) {
+    return (
+      <span className="av photo" style={style} aria-hidden>
+        <img src={`/api/photos/${photoId}?size=thumb`} alt="" loading="lazy" />
+      </span>
+    );
+  }
   if ((AVATARS as readonly string[]).includes(avatar)) {
     return (
       <span className={`av ${avatar}`} style={style} aria-hidden>

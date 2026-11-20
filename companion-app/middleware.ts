@@ -3,7 +3,7 @@ import { SESSION_COOKIE, verifySession } from "./lib/jwt";
 
 // Pages only signed in people can open. Companion pages (/c/...) and
 // profiles (/u/...) stay public so they can be shared.
-const PRIVATE = ["/home", "/messages", "/people", "/chat", "/companions", "/settings", "/welcome"];
+const PRIVATE = ["/home", "/memories", "/messages", "/people", "/chat", "/companions", "/settings", "/welcome"];
 
 export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
@@ -18,5 +18,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/home", "/messages/:path*", "/people", "/chat/:path*", "/companions/:path*", "/settings", "/welcome", "/login", "/signup"],
+  matcher: ["/home", "/memories/:path*", "/messages/:path*", "/people", "/chat/:path*", "/companions/:path*", "/settings", "/welcome", "/login", "/signup"],
 };

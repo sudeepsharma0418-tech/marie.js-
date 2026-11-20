@@ -1,4 +1,4 @@
-# Kindred
+# MemoryLane
 
 A premium AI companion and memory platform. People create companions inspired by the people and stories that matter to them, chat privately, share companions publicly, and message each other.
 
@@ -12,7 +12,11 @@ What's in it:
 - Memory per conversation, with a side panel to see and wipe it
 - Create and edit companions, with a private or public switch
 - Profiles (`/u/username`), a people directory, and private messaging between people with blocking
+- Photo memories: upload photos with a title, date, place and story, in a gallery or a life timeline
+- Companion photos, and memories connected to a companion so it can bring them up in chat
 - Rate limits for AI chat and for direct messages
+
+Photos are shrunk in the browser and stored in the Postgres database (`Photo` table), so no extra storage service is needed. Memory photos are only visible to their owner; a companion's picture is visible to everyone when the companion is public.
 
 ## Run it on your computer
 
@@ -54,7 +58,7 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 | `ANTHROPIC_EFFORT` | `low` | How hard the model thinks. `low` is fast and cheap and fine for chat. Try `medium` for deeper replies |
 | `CHAT_LIMIT_PER_MINUTE` | `15` | Messages one user can send per minute |
 | `CHAT_LIMIT_PER_DAY` | `400` | Messages one user can send per day |
-| `NEXT_PUBLIC_APP_NAME` | `Kindred` | The app's name |
+| `NEXT_PUBLIC_APP_NAME` | `MemoryLane` | The app's name |
 
 ## Put it online (Vercel)
 

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { getUser } from "@/lib/auth";
-import { compact } from "@/lib/social";
+import { compact, memoryWhen } from "@/lib/social";
 import { APP_NAME } from "@/lib/config";
 import { startChat } from "@/app/actions";
 import { Avatar, PersonAvatar } from "@/components/Avatar";
@@ -36,6 +36,14 @@ export default async function CompanionPage({ params }: Props) {
   if (!c) notFound();
 
   const isOwner = user?.id === c.userId;
+  const memories = isOwner
+    ? await db.memory.findMany({
+        where: { companionId: c.id },
+        orderBy: [{ year: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+        take: 12,
+        select: { id: true, title: true, year: true, month: true, photoId: true, story: true, place: true },
+      })
+    : [];
   const more = await db.companion.findMany({
     where: { isPublic: true, id: { not: c.id }, category: c.category },
     orderBy: { conversations: { _count: "desc" } },
@@ -47,7 +55,7 @@ export default async function CompanionPage({ params }: Props) {
     <main className="page">
       <section className="panel pad stack-lg" style={{ padding: 32 }}>
         <div className="profile-hero">
-          <Avatar name={c.name} avatar={c.avatar} size={112} />
+          <Avatar name={c.name} avatar={c.avatar} photoId={c.photoId} size={112} />
           <div className="stack" style={{ gap: 10 }}>
             <div className="row wrap" style={{ gap: 8 }}>
               <span className="badge plain">{c.category}</span>
@@ -113,6 +121,30 @@ export default async function CompanionPage({ params }: Props) {
           {!c.user.isSystem && c.user.bio && <p className="small muted">{c.user.bio}</p>}
         </section>
       </div>
+
+      {isOwner && (
+        <section>
+          <div className="section-head">
+            <h2>Memories {c.name} knows</h2>
+            <Link href={`/memories/new?companion=${c.id}`}>Add a memory</Link>
+          </div>
+          {memories.length > 0 ? (
+            <div className="memory-strip">
+              {memories.map((m) => (
+                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${m.photoId ? "" : "text-only"}`}>
+                  {m.photoId ? <img src={`/api/photos/${m.photoId}?size=thumb`} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
+                  <div className="memory-meta">
+                    <strong className="truncate">{m.title}</strong>
+                    <span className="tiny faint">{[memoryWhen(m), m.place].filter(Boolean).join(" · ")}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">Connect photos and stories so {c.name} can bring them up in conversation.</p>
+          )}
+        </section>
+      )}
 
       {more.length > 0 && (
         <section>

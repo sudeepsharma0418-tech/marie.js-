@@ -12,7 +12,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   const convo = await db.conversation.findFirst({
     where: { id, userId: user.id },
     include: {
-      companion: { select: { id: true, name: true, avatar: true, vibe: true, tagline: true, userId: true, isPublic: true } },
+      companion: { select: { id: true, name: true, avatar: true, photoId: true, vibe: true, tagline: true, userId: true, isPublic: true } },
       // Newest 200 messages, flipped back into reading order below.
       messages: { orderBy: { createdAt: "desc" }, take: 200 },
     },
@@ -27,6 +27,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
         id: convo.companion.id,
         name: convo.companion.name,
         avatar: convo.companion.avatar,
+        photoId: convo.companion.photoId,
         vibe: convo.companion.vibe,
         tagline: convo.companion.tagline,
         isOwner: convo.companion.userId === user.id,

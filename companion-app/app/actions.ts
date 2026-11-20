@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { createSession, deleteSession, requireUser } from "@/lib/auth";
-import { AVATARS, CATEGORIES, LIMITS, USERNAME_RE, VIBES } from "@/lib/config";
+import { AVATARS, CATEGORIES, LIMITS, MEMORY_CATEGORIES, USERNAME_RE, VIBES } from "@/lib/config";
+import { ownPhotoId } from "@/lib/photos";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -15,7 +16,7 @@ const DUMMY_HASH = "$2b$10$FKUbTY0z9KnseBNOFuOcH.Vje7GI6a1/UulmH1HH2LPeV6zU1bhHG
 const str = (form: FormData, key: string) => String(form.get(key) ?? "").trim();
 
 // Names that would clash with pages or look official.
-const RESERVED = new Set(["admin", "kindred", "support", "help", "settings", "official", "system", "team", "api", "me"]);
+const RESERVED = new Set(["admin", "kindred", "memorylane", "support", "help", "settings", "official", "system", "team", "api", "me"]);
 
 async function checkUsername(raw: string, userId?: string): Promise<string | { error: string }> {
   const username = raw.toLowerCase();
@@ -142,7 +143,8 @@ export async function createCompanion(_prev: FormState, form: FormData): Promise
   const parsed = readCompanion(form);
   if ("error" in parsed) return parsed;
 
-  const companion = await db.companion.create({ data: { userId: user.id, ...parsed.data } });
+  const photoId = await ownPhotoId(str(form, "photoId"), user.id);
+  const companion = await db.companion.create({ data: { userId: user.id, ...parsed.data, photoId } });
   const convo = await db.conversation.create({
     data: {
       userId: user.id,
@@ -163,9 +165,10 @@ export async function updateCompanion(_prev: FormState, form: FormData): Promise
   const parsed = readCompanion(form);
   if ("error" in parsed) return parsed;
 
+  const photoId = await ownPhotoId(str(form, "photoId"), user.id);
   const { count } = await db.companion.updateMany({
     where: { id, userId: user.id },
-    data: parsed.data,
+    data: { ...parsed.data, photoId },
   });
   if (count === 0) return { error: "Companion not found." };
 
@@ -265,4 +268,87 @@ export async function toggleBlock(form: FormData) {
   else await db.block.create({ data: { blockerId: user.id, blockedId: other.id } });
   revalidatePath(`/messages/${other.username}`);
   revalidatePath(`/u/${other.username}`);
+}
+
+// ---------- Memories ----------
+
+async function readMemory(form: FormData, userId: string) {
+  const title = str(form, "title");
+  const story = str(form, "story");
+  const place = str(form, "place");
+  const category = str(form, "category");
+  const yearRaw = str(form, "year");
+  const monthRaw = str(form, "month");
+
+  if (!title) return { error: "Give this memory a title." } as const;
+  if (title.length > LIMITS.memoryTitle) return { error: "Title is too long." } as const;
+  if (story.length > LIMITS.memoryStory) return { error: "Story is too long." } as const;
+  if (place.length > LIMITS.place) return { error: "Place is too long." } as const;
+
+  const now = new Date().getFullYear();
+  const year = yearRaw ? Number(yearRaw) : null;
+  if (year !== null && !(Number.isInteger(year) && year >= 1800 && year <= now + 1)) {
+    return { error: "Please enter a real year, like 1998." } as const;
+  }
+  const month = monthRaw ? Number(monthRaw) : null;
+  if (month !== null && !(Number.isInteger(month) && month >= 1 && month <= 12)) {
+    return { error: "Please pick a month." } as const;
+  }
+
+  const companionId = str(form, "companionId");
+  const companion = companionId
+    ? await db.companion.findFirst({ where: { id: companionId, userId }, select: { id: true } })
+    : null;
+
+  return {
+    data: {
+      title,
+      story,
+      place,
+      category: (MEMORY_CATEGORIES as readonly string[]).includes(category) ? category : MEMORY_CATEGORIES[0],
+      year,
+      month: year ? month : null,
+      companionId: companion?.id ?? null,
+      photoId: await ownPhotoId(str(form, "photoId"), userId),
+    },
+  } as const;
+}
+
+export async function createMemory(_prev: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const parsed = await readMemory(form, user.id);
+  if ("error" in parsed) return { error: parsed.error };
+  if (!parsed.data.photoId && !parsed.data.story) return { error: "Add a photo or a few words about this memory." };
+
+  const memory = await db.memory.create({ data: { userId: user.id, ...parsed.data } });
+  revalidatePath("/memories");
+  redirect(`/memories/${memory.id}`);
+}
+
+export async function updateMemory(_prev: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const id = str(form, "id");
+  const parsed = await readMemory(form, user.id);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const { count } = await db.memory.updateMany({ where: { id, userId: user.id }, data: parsed.data });
+  if (count === 0) return { error: "Memory not found." };
+  revalidatePath("/memories");
+  redirect(`/memories/${id}`);
+}
+
+export async function deleteMemory(form: FormData) {
+  const user = await requireUser();
+  const memory = await db.memory.findFirst({ where: { id: str(form, "id"), userId: user.id } });
+  if (memory) {
+    await db.memory.delete({ where: { id: memory.id } });
+    // Remove the photo too, unless a companion is using it as its picture.
+    if (memory.photoId) {
+      const inUse = await db.companion.count({ where: { photoId: memory.photoId } });
+      const otherMemories = await db.memory.count({ where: { photoId: memory.photoId } });
+      if (!inUse && !otherMemories) await db.photo.delete({ where: { id: memory.photoId } }).catch(() => {});
+    }
+  }
+  revalidatePath("/memories");
+  redirect("/memories");
 }

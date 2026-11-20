@@ -32,3 +32,13 @@ export function compact(n: number) {
   if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0).replace(/\.0$/, "")}k`;
   return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}m`;
 }
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "June 1998", "1998", or "" for a memory's date. */
+export function memoryWhen(m: { year: number | null; month: number | null }) {
+  if (!m.year) return "";
+  return m.month ? `${MONTHS[m.month - 1]} ${m.year}` : String(m.year);
+}
+
+export const MONTH_NAMES = MONTHS;

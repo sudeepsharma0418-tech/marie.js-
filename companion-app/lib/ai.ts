@@ -30,7 +30,13 @@ type CompanionInfo = {
  * The system prompt is split in two blocks. The first never changes for a
  * companion, so it stays cached. The memory block changes now and then.
  */
-export function buildSystem(companion: CompanionInfo, userName: string): Anthropic.Beta.BetaTextBlockParam[] {
+export type SharedMemory = { title: string; story: string; when: string; place: string };
+
+export function buildSystem(
+  companion: CompanionInfo,
+  userName: string,
+  sharedMemories: SharedMemory[] = [],
+): Anthropic.Beta.BetaTextBlockParam[] {
   const base = `You are ${companion.name}, an AI companion in a one to one chat with ${userName}.
 
 Your vibe: ${companion.vibe}.
@@ -53,6 +59,15 @@ Ground rules:
 - Keep things respectful and safe for work.`;
 
   const blocks: Anthropic.Beta.BetaTextBlockParam[] = [{ type: "text", text: base }];
+  if (sharedMemories.length) {
+    const list = sharedMemories
+      .map((m) => `- ${m.title}${m.when ? ` (${m.when}${m.place ? `, ${m.place}` : ""})` : m.place ? ` (${m.place})` : ""}${m.story ? `: ${m.story}` : ""}`)
+      .join("\n");
+    blocks.push({
+      type: "text",
+      text: `Real memories your creator shared with you. You may bring them up warmly when they fit. Never add details that are not written here; if asked about something not listed, say you don't remember that part.\n${list}`,
+    });
+  }
   if (companion.memory.trim()) {
     blocks.push({
       type: "text",

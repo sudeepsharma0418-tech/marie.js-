@@ -1,8 +1,9 @@
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { getUser } from "@/lib/auth";
-import { anthropic, buildSystem, EFFORT, FALLBACK_BETA, MODEL, refreshMemory, SUPPORTS_FALLBACK, toApiHistory } from "@/lib/ai";
+import { anthropic, buildSystem, type SharedMemory, EFFORT, FALLBACK_BETA, MODEL, refreshMemory, SUPPORTS_FALLBACK, toApiHistory } from "@/lib/ai";
 import { LIMITS, MEMORY_EVERY, RATE_LIMITS } from "@/lib/config";
+import { memoryWhen } from "@/lib/social";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,20 @@ export async function POST(req: Request) {
   recent.reverse();
   const history = toApiHistory(recent);
 
+  // Memories the creator connected to this companion (oldest first, trimmed to keep prompts small).
+  const connected = await db.memory.findMany({
+    where: { companionId: companion.id },
+    orderBy: [{ year: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    take: 40,
+    select: { title: true, story: true, year: true, month: true, place: true },
+  });
+  const sharedMemories: SharedMemory[] = connected.map((m) => ({
+    title: m.title,
+    story: m.story.slice(0, 600),
+    when: memoryWhen(m),
+    place: m.place,
+  }));
+
   const encoder = new TextEncoder();
   const apiStream = anthropic.beta.messages.stream({
     model: MODEL,
@@ -89,7 +104,7 @@ export async function POST(req: Request) {
     output_config: { effort: EFFORT },
     // Caches the system prompt and chat so far, so each new turn is cheaper and faster.
     cache_control: { type: "ephemeral" },
-    system: buildSystem({ ...companion, memory: convo.memory }, user.name),
+    system: buildSystem({ ...companion, memory: convo.memory }, user.name, sharedMemories),
     messages: history,
   });
 

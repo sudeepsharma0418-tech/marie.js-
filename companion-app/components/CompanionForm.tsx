@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { createCompanion, updateCompanion } from "@/app/actions";
 import { AVATARS, CATEGORIES, LIMITS, VIBES } from "@/lib/config";
 import { Avatar } from "./Avatar";
+import PhotoPicker from "./PhotoPicker";
 
 export type CompanionDefaults = {
   id: string;
@@ -16,6 +17,7 @@ export type CompanionDefaults = {
   backstory: string;
   greeting: string;
   isPublic: boolean;
+  photoId: string | null;
 };
 
 export default function CompanionForm({ initial }: { initial?: CompanionDefaults }) {
@@ -53,7 +55,12 @@ export default function CompanionForm({ initial }: { initial?: CompanionDefaults
       </label>
 
       <div className="label">
-        Look
+        Photo <span className="hint">Optional. A real picture makes them feel close.</span>
+        <PhotoPicker initialId={initial?.photoId} round label="Add photo" />
+      </div>
+
+      <div className="label">
+        Or pick a color
         <input type="hidden" name="avatar" value={avatar} />
         <div className="picker" role="radiogroup" aria-label="Look">
           {AVATARS.map((a) => (

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChatIcon, CompassIcon, HomeIcon, PlusIcon, UsersIcon } from "./Icons";
+import { BookIcon, ChatIcon, CompassIcon, HomeIcon, UsersIcon } from "./Icons";
 
 const LINKS = [
   { href: "/home", label: "Overview", Icon: HomeIcon },
+  { href: "/memories", label: "Memories", Icon: BookIcon },
   { href: "/discover", label: "Discover", Icon: CompassIcon },
   { href: "/messages", label: "Messages", Icon: ChatIcon },
   { href: "/people", label: "People", Icon: UsersIcon },
-  { href: "/companions/new", label: "Create", Icon: PlusIcon },
 ];
 
 export default function NavLinks({ unread }: { unread: number }) {

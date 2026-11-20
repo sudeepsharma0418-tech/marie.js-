@@ -8,6 +8,7 @@ export type CardCompanion = {
   id: string;
   name: string;
   avatar: string;
+  photoId?: string | null;
   tagline: string;
   category: string;
   isOfficial: boolean;
@@ -20,6 +21,7 @@ export const cardSelect = {
   id: true,
   name: true,
   avatar: true,
+  photoId: true,
   tagline: true,
   category: true,
   isOfficial: true,
@@ -32,7 +34,7 @@ export default function CompanionCard({ c, showPrivacy }: { c: CardCompanion; sh
   return (
     <Link href={`/c/${c.id}`} className="card">
       <div className="card-top">
-        <Avatar name={c.name} avatar={c.avatar} size={44} />
+        <Avatar name={c.name} avatar={c.avatar} photoId={c.photoId} size={44} />
         <div className="grow">
           <h3 className="truncate">{c.name}</h3>
           <span className="tiny faint truncate" style={{ display: "block" }}>
