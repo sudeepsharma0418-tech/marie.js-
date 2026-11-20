@@ -21,6 +21,9 @@ export const LIMITS = {
   message: 4000,
   bio: 160,
   directMessage: 2000,
+  memoryTitle: 80,
+  memoryStory: 3000,
+  place: 80,
 };
 
 // Per user message limits. Keeps one person from running up your API bill.
@@ -34,3 +37,10 @@ export const RATE_LIMITS = {
 export const MEMORY_EVERY = 12;
 
 export const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+
+export const MEMORY_CATEGORIES = ["Moments", "Family", "Travel", "Celebrations", "Childhood", "Milestones", "Everyday"] as const;
+
+export const PHOTO_LIMITS = {
+  maxBytes: 1_500_000, // after shrinking in the browser
+  perUser: 500,
+};

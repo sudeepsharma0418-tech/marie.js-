@@ -27,6 +27,8 @@ model User {
   directMessages DirectMessage[]
   blocking       Block[]         @relation("Blocker")
   blockedBy      Block[]         @relation("Blocked")
+  photos         Photo[]
+  memories       Memory[]
 }
 
 model Companion {
@@ -45,11 +47,13 @@ model Companion {
   memory      String   @default("")
   isPublic    Boolean  @default(false)
   isOfficial  Boolean  @default(false)
+  photoId     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   messages      Message[]
   conversations Conversation[]
+  memories      Memory[]
 
   @@index([userId])
   @@index([isPublic, updatedAt])
@@ -124,4 +128,41 @@ model Block {
   createdAt DateTime @default(now())
 
   @@id([blockerId, blockedId])
+}
+
+// A photo, shrunk in the browser before upload and stored in the database.
+model Photo {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mime      String
+  width     Int
+  height    Int
+  data      Bytes
+  thumb     Bytes
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// A memory: a photo and/or a story, with an optional date and place.
+// Connected to a companion, it becomes part of what that companion knows.
+model Memory {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companionId String?
+  companion   Companion? @relation(fields: [companionId], references: [id], onDelete: SetNull)
+  photoId     String?
+  title       String
+  story       String     @default("")
+  year        Int?
+  month       Int?
+  place       String     @default("")
+  category    String     @default("Moments")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId, year])
+  @@index([companionId])
 }
