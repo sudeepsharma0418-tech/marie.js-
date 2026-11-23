@@ -68,6 +68,7 @@ export default function Chat({
     const next = !voiceOn;
     setVoiceOn(next);
     voiceOnRef.current = next;
+    if (next) voice.prime();
     if (!next) voice.stopSpeaking();
     try {
       localStorage.setItem("ml-voice", next ? "on" : "off");
@@ -163,6 +164,7 @@ export default function Chat({
   }
 
   function send(textArg?: string) {
+    if (voiceOnRef.current) voice.prime();
     const text = (textArg ?? input).trim();
     if (!text || busy) return;
     if (!textArg) setInput("");

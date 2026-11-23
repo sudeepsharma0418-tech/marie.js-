@@ -7,6 +7,16 @@ const MODEL = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
 export const CLONING_ENABLED = Boolean(KEY);
 export const VOICE_UPLOAD = { maxBytes: 4 * 1024 * 1024, perUser: 5 };
 
+/** Turns an ElevenLabs error into a short message people can act on. */
+export function explain(status: number, body: string, action: string) {
+  const b = body.toLowerCase();
+  if (b.includes("quota") || b.includes("credits") || status === 402) return `${action}: the voice account is out of credits.`;
+  if (b.includes("instant_voice_cloning") || b.includes("subscription") || b.includes("plan")) return `${action}: the voice account's plan doesn't include voice cloning (needs Starter or higher).`;
+  if (b.includes("permission") || b.includes("missing_permissions")) return `${action}: the API key is missing a permission (turn on Voices and Text to Speech for the key).`;
+  if (status === 401) return `${action}: the voice service rejected the API key.`;
+  return `${action} (voice service error ${status}).`;
+}
+
 /** Creates an instant voice clone from one recording. Returns the provider's voice id. */
 export async function createClone(name: string, file: File): Promise<string> {
   const form = new FormData();
@@ -15,11 +25,12 @@ export async function createClone(name: string, file: File): Promise<string> {
   form.set("remove_background_noise", "true");
   form.append("files", file, file.name || "voice.mp3");
   const res = await fetch(`${BASE}/v1/voices/add`, { method: "POST", headers: { "xi-api-key": KEY }, body: form });
-  const data = (await res.json().catch(() => ({}))) as { voice_id?: string; detail?: { message?: string } | string };
+  const raw = await res.text();
+  let data: { voice_id?: string } = {};
+  try { data = JSON.parse(raw); } catch {}
   if (!res.ok || !data.voice_id) {
-    const detail = typeof data.detail === "string" ? data.detail : data.detail?.message;
-    console.error("Voice clone failed:", res.status, detail);
-    throw new Error(res.status === 401 ? "Voice cloning isn't set up correctly." : "Couldn't make a voice from that recording. Try a clearer clip.");
+    console.error("Voice clone failed:", res.status, raw.slice(0, 500));
+    throw new Error(res.status === 400 || res.status === 422 ? "Couldn't make a voice from that recording. Try a clearer clip with only one person talking." : explain(res.status, raw, "Couldn't make the voice"));
   }
   return data.voice_id;
 }

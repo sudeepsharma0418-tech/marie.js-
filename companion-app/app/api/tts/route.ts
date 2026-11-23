@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { getUser } from "@/lib/auth";
-import { CLONING_ENABLED, speech } from "@/lib/elevenlabs";
+import { CLONING_ENABLED, explain, speech } from "@/lib/elevenlabs";
 import { stripRefs } from "@/lib/refs";
 
 export const runtime = "nodejs";
@@ -37,8 +37,9 @@ export async function POST(req: Request) {
 
   const res = await speech(companion.voiceClone.providerId, text);
   if (!res.ok || !res.body) {
-    console.error("Speech failed:", res.status, await res.text().catch(() => ""));
-    return json({ error: "Couldn't play the voice right now." }, 502);
+    const raw = await res.text().catch(() => "");
+    console.error("Speech failed:", res.status, raw.slice(0, 500));
+    return json({ error: explain(res.status, raw, "Couldn't play the uploaded voice") }, 502);
   }
   return new Response(res.body, { headers: { "content-type": "audio/mpeg", "cache-control": "private, max-age=3600" } });
 }

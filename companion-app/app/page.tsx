@@ -31,7 +31,7 @@ export default async function Landing() {
       <section className="hero">
         <div className="container hero-grid">
           <div>
-            <h1>Some memories deserve to live forever.</h1>
+            <h1>Some memories deserve to <em>live forever.</em></h1>
             <p className="lead">
               Preserve their stories, remember their voices, and keep the moments that matter close.
             </p>

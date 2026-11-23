@@ -61,6 +61,9 @@ function pickVoice(s: number) {
   return best.length ? best[s % best.length] : null;
 }
 
+// A tiny silent sound, used to unlock audio playback on Safari.
+const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
 /** Plays a short sample of a voice style, for previews in the companion form. */
 export function previewVoice(text: string, seedName: string, style?: VoiceStyle) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
@@ -89,6 +92,17 @@ export function useVoice(companionName: string, style?: VoiceStyle, cloneFor?: s
   const rec = useRef<Recognition | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioCtl = useRef<AbortController | null>(null);
+  const unlocked = useRef(false);
+
+  // Safari only lets a page play audio that was started from a tap. Playing a
+  // silent clip during a tap unlocks this audio element for later replies.
+  const prime = useCallback(() => {
+    if (!cloneFor || unlocked.current || typeof Audio === "undefined") return;
+    const a = audio.current ?? new Audio();
+    audio.current = a;
+    a.src = SILENT;
+    a.play().then(() => { unlocked.current = true; }).catch(() => {});
+  }, [cloneFor]);
 
   useEffect(() => {
     setCanListen(Boolean(recognitionClass()));
@@ -142,9 +156,12 @@ export function useVoice(companionName: string, style?: VoiceStyle, cloneFor?: s
       audioCtl.current?.abort();
       audio.current?.pause();
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      prime();
+      setError("");
       const ctl = new AbortController();
       audioCtl.current = ctl;
       setSpeakingId(id);
+      const finish = () => setSpeakingId((cur) => (cur === id ? null : cur));
       fetch("/api/tts", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -152,28 +169,29 @@ export function useVoice(companionName: string, style?: VoiceStyle, cloneFor?: s
         signal: ctl.signal,
       })
         .then(async (res) => {
-          if (!res.ok) throw new Error("tts");
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || "Couldn't play the uploaded voice.");
+          }
           const url = URL.createObjectURL(await res.blob());
           if (ctl.signal.aborted) return URL.revokeObjectURL(url);
-          const a = new Audio(url);
+          const a = audio.current ?? new Audio();
           audio.current = a;
-          const done = () => {
-            URL.revokeObjectURL(url);
-            setSpeakingId((cur) => (cur === id ? null : cur));
-          };
-          a.onended = done;
-          a.onerror = done;
-          a.onpause = done;
+          a.onended = a.onerror = () => { URL.revokeObjectURL(url); finish(); };
+          a.src = url;
           await a.play();
         })
-        .catch((e) => {
+        .catch((e: Error) => {
           if (ctl.signal.aborted) return;
-          // The uploaded voice is unavailable: use the device voice instead.
-          if ((e as Error).name !== "NotAllowedError") speakDevice(text, id);
-          else setSpeakingId(null);
+          finish();
+          if (e.name === "NotAllowedError") setError("Your browser blocked the sound. Tap the play button on the message to hear it.");
+          else {
+            setError(`${e.message} Using the device voice instead.`);
+            speakDevice(text, id);
+          }
         });
     },
-    [cloneFor, speakDevice],
+    [cloneFor, speakDevice, prime],
   );
 
   /** Listens once. Calls onText while speaking and onDone with the final words. */
@@ -212,5 +230,5 @@ export function useVoice(companionName: string, style?: VoiceStyle, cloneFor?: s
 
   const stopListening = useCallback(() => rec.current?.stop(), []);
 
-  return { canListen, canSpeak, listening, speakingId, error, speak, stopSpeaking, listen, stopListening };
+  return { canListen, canSpeak, listening, speakingId, error, speak, stopSpeaking, listen, stopListening, prime };
 }
