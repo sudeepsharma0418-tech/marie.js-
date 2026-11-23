@@ -41,6 +41,26 @@ function seed(name: string) {
 /** Optional speaking style: pace and tone only. It never imitates a real person's voice. */
 export type VoiceStyle = { rate?: number; pitch?: number };
 
+// Novelty voices that ship with some systems (mostly Apple). Never use these.
+const NOVELTY = /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|jester|junior|organ|princess|ralph|superstar|trinoids|whisper|wobble|zarvox|fred|kathy|grandma|grandpa|rocko|shelley|flo|eddy|reed|sandy/i;
+// Voices that usually sound the most natural.
+const QUALITY = /natural|neural|enhanced|premium|google|samantha|daniel|alex|aria|jenny|guy|libby|ryan|siri/i;
+
+/** Picks a good voice in the person's language. Companions get one of the best few. */
+function pickVoice(s: number) {
+  const all = window.speechSynthesis.getVoices();
+  if (!all.length) return null;
+  const lang = (navigator.language || "en-US").toLowerCase();
+  const base = lang.slice(0, 2);
+  const usable = all.filter((v) => !NOVELTY.test(v.name));
+  const sameLang = usable.filter((v) => v.lang.toLowerCase().startsWith(base));
+  const pool = sameLang.length ? sameLang : usable;
+  const rank = (v: SpeechSynthesisVoice) =>
+    (QUALITY.test(v.name) ? 0 : 2) + (v.lang.toLowerCase() === lang ? 0 : 1) + (v.default ? -0.5 : 0);
+  const best = [...pool].sort((a, b) => rank(a) - rank(b)).slice(0, 3);
+  return best.length ? best[s % best.length] : null;
+}
+
 export function useVoice(companionName: string, style?: VoiceStyle) {
   const [canListen, setCanListen] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
@@ -72,13 +92,15 @@ export function useVoice(companionName: string, style?: VoiceStyle) {
       if (!clean) return;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(clean);
-      const lang = (navigator.language || "en").slice(0, 2);
-      const voices = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(lang));
-      const pool = voices.length ? voices : window.speechSynthesis.getVoices();
       const s = seed(companionName);
-      if (pool.length) u.voice = pool[s % pool.length];
+      try {
+        const voice = pickVoice(s);
+        if (voice) u.voice = voice;
+      } catch {
+        // Fall back to the device's default voice.
+      }
       u.rate = style?.rate ?? 1;
-      u.pitch = style?.pitch ?? 0.9 + (s % 5) * 0.05; // a slightly different tone per companion
+      u.pitch = style?.pitch ?? 0.95 + (s % 3) * 0.05; // a slightly different tone per companion
       u.onend = () => setSpeakingId((cur) => (cur === id ? null : cur));
       u.onerror = () => setSpeakingId((cur) => (cur === id ? null : cur));
       setSpeakingId(id);

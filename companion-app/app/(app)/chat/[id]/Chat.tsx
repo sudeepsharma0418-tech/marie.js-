@@ -15,8 +15,8 @@ type CompanionProps = { id: string; name: string; avatar: string; photoId: strin
 // Speaking styles for the featured simulations: pace and tone of a standard
 // computer voice, inspired by each one's on stage energy. Not voice imitation.
 const VOICE_STYLES: Record<string, { rate: number; pitch: number }> = {
-  "school-trump-sim": { rate: 0.92, pitch: 0.75 }, // slower, deeper, deliberate speech
-  "sim-mrbeast": { rate: 1.25, pitch: 1.15 }, // fast, high energy video intro
+  "school-trump-sim": { rate: 0.95, pitch: 0.88 }, // a little slower and deeper
+  "sim-mrbeast": { rate: 1.12, pitch: 1.05 }, // a little faster and brighter
 };
 
 const STARTERS = ["Tell me about yourself", "I had a long day", "Ask me something interesting", "Can you help me think something through?"];
