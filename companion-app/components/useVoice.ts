@@ -61,6 +61,21 @@ function pickVoice(s: number) {
   return best.length ? best[s % best.length] : null;
 }
 
+/** Plays a short sample of a voice style, for previews in the companion form. */
+export function previewVoice(text: string, seedName: string, style?: VoiceStyle) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  try {
+    const voice = pickVoice(seed(seedName));
+    if (voice) u.voice = voice;
+  } catch {}
+  u.rate = style?.rate ?? 1;
+  u.pitch = style?.pitch ?? 1;
+  window.speechSynthesis.speak(u);
+  return true;
+}
+
 export function useVoice(companionName: string, style?: VoiceStyle) {
   const [canListen, setCanListen] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);

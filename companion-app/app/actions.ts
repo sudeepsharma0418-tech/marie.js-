@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { createSession, deleteSession, requireUser } from "@/lib/auth";
 import { AVATARS, CATEGORIES, LIMITS, MEMORY_CATEGORIES, USERNAME_RE, VIBES } from "@/lib/config";
 import { ownPhotoId } from "@/lib/photos";
+import { VOICE_KEYS } from "@/lib/voices";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -101,6 +102,7 @@ type CompanionFields = {
   greeting: string;
   isPublic: boolean;
   listed: boolean;
+  voice: string;
 };
 
 function readCompanion(form: FormData): { error: string } | { data: CompanionFields } {
@@ -134,8 +136,29 @@ function readCompanion(form: FormData): { error: string } | { data: CompanionFie
       // "private": only you. "link": anyone with the link. "public": also listed on Explore.
       isPublic: ["link", "public"].includes(str(form, "visibility")),
       listed: str(form, "visibility") !== "link",
+      voice: (VOICE_KEYS as string[]).includes(str(form, "voice")) ? str(form, "voice") : "",
     },
   };
+}
+
+/** Memories added while creating a companion: mem_title_0, mem_year_0, mem_story_0, mem_photo_0, ... */
+async function readStarterMemories(form: FormData, userId: string) {
+  const out: { title: string; story: string; year: number | null; photoId: string | null }[] = [];
+  const now = new Date().getFullYear();
+  for (let i = 0; i < 6; i++) {
+    const title = str(form, `mem_title_${i}`).slice(0, LIMITS.memoryTitle);
+    const story = str(form, `mem_story_${i}`).slice(0, LIMITS.memoryStory);
+    const photoId = await ownPhotoId(str(form, `mem_photo_${i}`), userId);
+    if (!title && !story && !photoId) continue;
+    const y = Number(str(form, `mem_year_${i}`));
+    out.push({
+      title: title || story.split(/[.!?\n]/)[0].slice(0, 60) || "A memory",
+      story,
+      year: Number.isInteger(y) && y >= 1800 && y <= now + 1 ? y : null,
+      photoId,
+    });
+  }
+  return out;
 }
 
 const greetingFor = (c: { name: string; greeting: string }, userName: string) =>
@@ -147,7 +170,13 @@ export async function createCompanion(_prev: FormState, form: FormData): Promise
   if ("error" in parsed) return parsed;
 
   const photoId = await ownPhotoId(str(form, "photoId"), user.id);
+  const memories = await readStarterMemories(form, user.id);
   const companion = await db.companion.create({ data: { userId: user.id, ...parsed.data, photoId } });
+  if (memories.length) {
+    await db.memory.createMany({
+      data: memories.map((m) => ({ ...m, userId: user.id, companionId: companion.id, category: "Moments" })),
+    });
+  }
   const convo = await db.conversation.create({
     data: {
       userId: user.id,

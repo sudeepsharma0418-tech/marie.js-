@@ -8,10 +8,11 @@ import { Avatar } from "@/components/Avatar";
 import { BackIcon, BookIcon, BrainIcon, DotsIcon, MicIcon, PlayIcon, SendIcon, SpeakerIcon, SpeakerOffIcon, StopIcon } from "@/components/Icons";
 import { useVoice } from "@/components/useVoice";
 import { splitRefs, stripRefs } from "@/lib/refs";
+import { voiceStyle } from "@/lib/voices";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
 type LaneItem = { id: string; title: string; year: number | null; place: string; src: string };
-type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean };
+type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean; voice: string };
 
 // Speaking styles for the featured simulations: pace and tone of a standard
 // computer voice, inspired by each one's on stage energy. Not voice imitation.
@@ -43,7 +44,7 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
-  const voice = useVoice(companion.name, VOICE_STYLES[companion.id]);
+  const voice = useVoice(companion.name, VOICE_STYLES[companion.id] ?? voiceStyle(companion.voice));
   const [voiceOn, setVoiceOn] = useState(false);
   const voiceOnRef = useRef(false);
 

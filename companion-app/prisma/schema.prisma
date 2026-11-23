@@ -55,6 +55,8 @@ model Companion {
   image       String   @default("")
   // Extra guidance on how this companion helps, added to its instructions.
   guide       String   @default("")
+  // Voice style key from lib/voices.ts, e.g. "warm". Empty means automatic.
+  voice       String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

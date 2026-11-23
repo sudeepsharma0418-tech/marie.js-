@@ -289,6 +289,13 @@ a.list-item:hover strong { color: var(--primary); }
 /* ---------- Forms page ---------- */
 .form { display: flex; flex-direction: column; gap: 22px; }
 .form-preview { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 18px; background: var(--bg-primary); }
+.mem-rows { display: flex; flex-direction: column; gap: 12px; }
+.mem-row { display: flex; gap: 14px; align-items: flex-start; padding: 14px; border-radius: 18px; background: var(--bg-primary); }
+.mem-row .photo-picker { width: 110px; flex: none; }
+.mem-row .photo-picker .photo-drop { width: 110px; height: 96px; }
+.mem-row .photo-picker .row { flex-wrap: wrap; }
+.mem-fields { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+@media (max-width: 560px) { .mem-row { flex-direction: column; } }
 .av-pick { padding: 2px; border: 2px solid transparent; background: none; cursor: pointer; border-radius: 50%; }
 .av-pick.on { border-color: var(--ink); }
 
