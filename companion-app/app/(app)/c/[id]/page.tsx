@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { ensureSchoolSim, ensureSetup } from "@/lib/official";
+import { ensureSchoolSim, ensureSetup, SIMULATION_IDS } from "@/lib/official";
 import { memorySrc } from "@/lib/photos";
 import { getUser } from "@/lib/auth";
 import { compact, memoryWhen } from "@/lib/social";
@@ -40,11 +40,13 @@ export default async function CompanionPage({ params }: Props) {
   if (!c) notFound();
 
   const isOwner = user?.id === c.userId;
-  const memories = isOwner
+  const isSim = SIMULATION_IDS.includes(c.id);
+  const showMemories = isOwner || isSim;
+  const memories = showMemories
     ? await db.memory.findMany({
         where: { companionId: c.id },
         orderBy: [{ year: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
-        take: 12,
+        take: 24,
         select: { id: true, title: true, year: true, month: true, photoId: true, image: true, story: true, place: true },
       })
     : [];
@@ -64,6 +66,7 @@ export default async function CompanionPage({ params }: Props) {
             <div className="row wrap" style={{ gap: 8 }}>
               <span className="badge plain">{c.category}</span>
               {c.isOfficial && <span className="badge"><CheckIcon className="" /> Official</span>}
+              {isSim && <span className="badge accent">AI simulation · not the real person</span>}
               {isOwner && (!c.isPublic
                 ? <span className="badge plain"><LockIcon className="" /> Only you</span>
                 : c.listed
@@ -114,7 +117,7 @@ export default async function CompanionPage({ params }: Props) {
         <section className="panel pad stack">
           <span className="eyebrow">Made by</span>
           {c.user.isSystem ? (
-            <div className="row"><PersonAvatar name={`${APP_NAME} Team`} /><div><strong>The {APP_NAME} team</strong><p className="small muted">{c.isOfficial ? "Official companion" : "Class demo"}</p></div></div>
+            <div className="row"><PersonAvatar name={`${APP_NAME} Team`} /><div><strong>The {APP_NAME} team</strong><p className="small muted">{c.isOfficial ? "Official companion" : "AI simulation"}</p></div></div>
           ) : (
             <Link href={`/u/${c.user.username}`} className="row">
               <PersonAvatar name={c.user.name} />
@@ -128,16 +131,16 @@ export default async function CompanionPage({ params }: Props) {
         </section>
       </div>
 
-      {isOwner && (
+      {showMemories && (
         <section>
           <div className="section-head">
-            <h2>Memories {c.name} knows</h2>
-            <Link href={`/memories/new?companion=${c.id}`}>Add a memory</Link>
+            <h2>{isSim ? "Timeline from the public record" : `Memories ${c.name} knows`}</h2>
+            {isOwner && <Link href={`/memories/new?companion=${c.id}`}>Add a memory</Link>}
           </div>
           {memories.length > 0 ? (
             <div className="memory-strip">
               {memories.map((m) => (
-                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
+                <Link key={m.id} href={isOwner ? `/memories/${m.id}` : "#"} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
                   {memorySrc(m) ? <img src={memorySrc(m)} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
                   <div className="memory-meta">
                     <strong className="truncate">{m.title}</strong>

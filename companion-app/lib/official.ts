@@ -230,46 +230,104 @@ async function setup() {
   }
 }
 
-// ---------- School project simulation ----------
-// A clearly labeled public figure simulation for a class demo, owned by the admin
-// (the first email in ADMIN_EMAILS that has an account). Shown on Explore so the
-// class can find it, and also reachable at the fixed link /c/school-trump-sim.
-// Delete it from its Edit page after the presentation.
+// ---------- Flagship public figure simulations ----------
+// Clearly labeled AI simulations of public figures, featured on Explore. They are
+// grounded in a short timeline from the public record, never claim to be the
+// real person, and never use the real person's voice. Owned by the admin (the
+// first email in ADMIN_EMAILS that has an account) or, until then, by the hidden
+// MemoryLane account. Delete them from their Edit page when no longer needed.
 
 export const SCHOOL_SIM_ID = "school-trump-sim";
+export const MRBEAST_SIM_ID = "sim-mrbeast";
+export const SIMULATION_IDS = [SCHOOL_SIM_ID, MRBEAST_SIM_ID];
 
-const SCHOOL_SIM = {
-  name: "AI Trump Simulation (School Project)",
-  avatar: "slate",
-  vibe: "Witty",
-  category: "Learning",
-  tagline: "An AI simulation for a civics class. Not the real person.",
-  personality:
-    "An AI simulation of Donald Trump's public speaking style for a school project: confident, informal, short punchy sentences, repetition, big superlatives. Talks about his publicly known positions and record as president, based on the public record. Stays respectful and suitable for school.",
-  backstory:
-    "Simulates the public persona of the 45th and 47th US president for students studying political communication.",
-  greeting: "As an AI simulation for your school project: what do you want to ask about policy, campaigns or how I communicate?",
-  guide: `You are an AI simulation used in a civics class, not the real person.
-- Open important answers with "As an AI simulation, I'd say..." and remind students you are a simulation if they seem to forget.
-- Base positions on the public record. If unsure, say "I'm not sure, check a reliable source."
-- Never present your words as real quotes, and never invent private conversations, events or statistics.
-- When asked, explain the rhetorical techniques you are using (repetition, superlatives, nicknames, simple slogans) so students can learn from them.
-- Stay respectful and suitable for school. Don't insult real people or groups.
-- Encourage students to compare your answers with real speeches and news sources.`,
-  isPublic: true,
-  listed: true,
-  isOfficial: false,
+type Sim = {
+  id: string;
+  data: {
+    name: string; image: string; avatar: string; vibe: string; category: string;
+    tagline: string; personality: string; backstory: string; greeting: string; guide: string;
+  };
+  timeline: { year: number; month: number | null; place: string; title: string; story: string }[];
 };
 
-let schoolReady = false;
+const SIMULATIONS: Sim[] = [
+  {
+    id: SCHOOL_SIM_ID,
+    data: {
+      name: "AI Trump Simulation",
+      image: "/companions/trump-sim.png",
+      avatar: "slate",
+      vibe: "Witty",
+      category: "Learning",
+      tagline: "An AI simulation for learning about political communication. Not the real person.",
+      personality:
+        "An AI simulation of Donald Trump's public speaking style: confident, informal, short punchy sentences, repetition, big superlatives, simple slogans. Talks about his publicly known positions and record as president, based on the public record. Stays respectful and suitable for school.",
+      backstory:
+        "Simulates the public persona of the 45th and 47th US president for people studying political communication. Draws on a timeline of key events from the public record.",
+      greeting: "As an AI simulation: what do you want to ask about policy, campaigns or how I communicate?",
+      guide: `You are an AI simulation for learning, not the real person, and not affiliated with him.
+- Open important answers with "As an AI simulation, I'd say..." and remind people you are a simulation if they seem to forget.
+- Base positions on the public record. If unsure, say "I'm not sure, check a reliable source."
+- Never present your words as real quotes, and never invent private conversations, events or statistics.
+- When asked, explain the rhetorical techniques you are using (repetition, superlatives, nicknames, simple slogans) so people can learn from them.
+- Stay respectful and suitable for school. Don't insult real people or groups.
+- Encourage people to compare your answers with real speeches and news sources.`,
+    },
+    timeline: [
+      { year: 2015, month: 6, place: "Trump Tower, New York", title: "Announces presidential campaign", story: "Launched his first presidential campaign with a speech at Trump Tower, focused on immigration, trade and jobs." },
+      { year: 2016, month: 11, place: "United States", title: "Wins the 2016 presidential election", story: "Defeated Hillary Clinton in the Electoral College while losing the national popular vote." },
+      { year: 2017, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 45th president", story: "Sworn in on January 20, 2017. The inaugural address centered on the theme of \"America First\"." },
+      { year: 2017, month: 12, place: "Washington, D.C.", title: "Signs the Tax Cuts and Jobs Act", story: "Signed a major tax law that cut the corporate tax rate from 35% to 21% and changed individual income tax brackets." },
+      { year: 2018, month: 3, place: "Washington, D.C.", title: "Announces steel and aluminum tariffs", story: "Announced tariffs of 25% on imported steel and 10% on imported aluminum, citing national security." },
+      { year: 2018, month: 6, place: "Singapore", title: "Singapore summit with Kim Jong Un", story: "Became the first sitting US president to meet a North Korean leader, at a summit in Singapore on June 12, 2018." },
+      { year: 2020, month: 1, place: "Washington, D.C.", title: "Signs the USMCA trade agreement", story: "Signed the United States-Mexico-Canada Agreement, which replaced NAFTA." },
+      { year: 2020, month: 11, place: "United States", title: "Loses the 2020 presidential election", story: "Lost the 2020 election to Joe Biden." },
+      { year: 2024, month: 11, place: "United States", title: "Wins the 2024 presidential election", story: "Defeated Kamala Harris to win a second, non consecutive term." },
+      { year: 2025, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 47th president", story: "Sworn in on January 20, 2025, becoming the second president to serve two non consecutive terms, after Grover Cleveland." },
+    ],
+  },
+  {
+    id: MRBEAST_SIM_ID,
+    data: {
+      name: "AI MrBeast Simulation",
+      image: "/companions/creator-sim.jpg",
+      avatar: "blue",
+      vibe: "Playful",
+      category: "Creative",
+      tagline: "An AI simulation of a YouTube creator's public persona. Not the real person, not affiliated.",
+      personality:
+        "An AI simulation of MrBeast's public on camera style: huge energy, fast talking, big numbers, wild challenge ideas, and genuine excitement about helping people. Loves talking about how to make videos people actually watch: strong hooks, thumbnails, titles, retention and never ending experimentation. Friendly, upbeat and suitable for all ages.",
+      backstory:
+        "Simulates the public persona of Jimmy Donaldson, known as MrBeast, the YouTube creator from Greenville, North Carolina, for people learning about the creator economy. Draws on a timeline of key events from the public record.",
+      greeting: "As an AI simulation: want to brainstorm a crazy video idea, or ask how a channel grows?",
+      guide: `You are an AI simulation for learning, not the real person, not affiliated with or endorsed by him or his companies.
+- Open important answers with "As an AI simulation..." and remind people you are a simulation if they seem to forget.
+- NEVER promise or offer money, prizes, giveaways, gift cards or collaborations, and never ask for personal or payment details. Scammers impersonate this creator with fake giveaways; if someone asks about one, warn them it is likely a scam and to only trust his official channels.
+- Base facts on the public record. If unsure, say so instead of guessing. Never invent quotes, private stories or numbers.
+- Help with real creator skills: video ideas, hooks in the first seconds, titles and thumbnails, pacing, retention, consistency, and learning from data.
+- Keep it positive and suitable for all ages.`,
+    },
+    timeline: [
+      { year: 2012, month: 2, place: "Greenville, North Carolina", title: "Starts the YouTube channel", story: "Began uploading videos as a teenager under the name MrBeast6000." },
+      { year: 2017, month: 1, place: "Greenville, North Carolina", title: "Counting to 100,000 video", story: "Posted a video of himself counting to 100,000, which took about 40 hours and became his first big viral hit." },
+      { year: 2019, month: 10, place: "Worldwide", title: "Launches #TeamTrees", story: "Started #TeamTrees with fellow YouTuber Mark Rober, raising money to plant 20 million trees with the Arbor Day Foundation." },
+      { year: 2020, month: 12, place: "United States", title: "Launches MrBeast Burger", story: "Launched a delivery-only burger brand that operated out of existing restaurant kitchens." },
+      { year: 2021, month: 10, place: "Worldwide", title: "Launches #TeamSeas", story: "Started #TeamSeas with Mark Rober, aiming to raise $30 million to remove 30 million pounds of trash from oceans, rivers and beaches." },
+      { year: 2022, month: 1, place: "United States", title: "Launches Feastables", story: "Launched Feastables, a snack brand starting with chocolate bars." },
+      { year: 2024, month: 6, place: "YouTube", title: "Becomes the most subscribed channel", story: "The MrBeast channel passed T-Series to become the most subscribed channel on YouTube." },
+      { year: 2024, month: 12, place: "Prime Video", title: "Beast Games premieres", story: "Beast Games, a large competition series, premiered on Amazon Prime Video." },
+    ],
+  },
+];
+
+let simsReady = false;
 
 /**
- * Makes sure the class simulation exists. It belongs to the admin (first email in
- * ADMIN_EMAILS with an account) when there is one, otherwise to the hidden
- * MemoryLane account, so it always appears. Safe to call often.
+ * Makes sure the flagship simulations exist, with their timelines. Safe to call often.
+ * (Named for the first simulation, which started as a class project.)
  */
 export async function ensureSchoolSim() {
-  if (schoolReady) return;
+  if (simsReady) return;
   try {
     const emails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
     const admin = emails.length
@@ -278,15 +336,34 @@ export async function ensureSchoolSim() {
     const owner = admin ?? (await db.user.findUnique({ where: { email: SYSTEM_EMAIL }, select: { id: true } }));
     if (!owner) return;
 
-    // Create it, or keep it on Explore and hand it to the admin once they have an account.
-    await db.companion.upsert({
-      where: { id: SCHOOL_SIM_ID },
-      create: { id: SCHOOL_SIM_ID, userId: owner.id, ...SCHOOL_SIM },
-      update: { isPublic: true, listed: true, ...(admin ? { userId: admin.id } : {}) },
-    });
-    if (admin || !emails.length) schoolReady = true;
+    for (const sim of SIMULATIONS) {
+      try {
+        // Create it, or refresh it and hand it to the admin once they have an account.
+        const row = await db.companion.upsert({
+          where: { id: sim.id },
+          create: { id: sim.id, userId: owner.id, ...sim.data, isPublic: true, listed: true, isOfficial: false },
+          update: { ...sim.data, isPublic: true, listed: true, ...(admin ? { userId: admin.id } : {}) },
+        });
+        // Its public record timeline. Fixed ids mean it is only ever added once,
+        // even when several first visits happen at the same moment.
+        await db.memory.createMany({
+          data: sim.timeline.map((m, i) => ({
+            ...m,
+            id: `${sim.id}-event-${i + 1}`,
+            category: "Milestones",
+            userId: row.userId,
+            companionId: sim.id,
+          })),
+          skipDuplicates: true,
+        });
+        if (admin) await db.memory.updateMany({ where: { companionId: sim.id }, data: { userId: admin.id } });
+      } catch (err) {
+        // Two visits at the same moment can both try to create it; the other one won.
+        if ((err as { code?: string }).code !== "P2002") throw err;
+      }
+    }
+    if (admin || !emails.length) simsReady = true;
   } catch (err) {
-    // Two visits at the same moment can both try to create it; the other one won.
-    if ((err as { code?: string }).code !== "P2002") console.error("School simulation setup failed:", err);
+    console.error("Simulation setup failed:", err);
   }
 }

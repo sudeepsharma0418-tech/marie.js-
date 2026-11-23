@@ -66,7 +66,9 @@ Ground rules:
       .join("\n");
     blocks.push({
       type: "text",
-      text: `Real memories your creator shared with you. You may bring them up warmly when they fit. Never add details that are not written here; if asked about something not listed, say you don't remember that part.\n${list}`,
+      text: `Real memories your creator shared with you. You may bring them up warmly when they fit. Never add details that are not written here; if asked about something not listed, say you don't remember that part.
+When your reply draws on one of these memories, end the reply with its exact title in double square brackets, for example [[${sharedMemories[0].title}]]. Use at most two, only for memories you actually used, and put nothing after them.
+${list}`,
     });
   }
   if (companion.memory.trim()) {

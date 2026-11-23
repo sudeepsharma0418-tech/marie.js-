@@ -5,11 +5,19 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { forgetMemory, leaveChat, resetChat } from "@/app/actions";
 import { LIMITS } from "@/lib/config";
 import { Avatar } from "@/components/Avatar";
-import { BackIcon, BrainIcon, DotsIcon, MicIcon, PlayIcon, SendIcon, SpeakerIcon, SpeakerOffIcon, StopIcon } from "@/components/Icons";
+import { BackIcon, BookIcon, BrainIcon, DotsIcon, MicIcon, PlayIcon, SendIcon, SpeakerIcon, SpeakerOffIcon, StopIcon } from "@/components/Icons";
 import { useVoice } from "@/components/useVoice";
+import { splitRefs, stripRefs } from "@/lib/refs";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
 type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean };
+
+// Speaking styles for the featured simulations: pace and tone of a standard
+// computer voice, inspired by each one's on stage energy. Not voice imitation.
+const VOICE_STYLES: Record<string, { rate: number; pitch: number }> = {
+  "school-trump-sim": { rate: 0.92, pitch: 0.75 }, // slower, deeper, deliberate speech
+  "sim-mrbeast": { rate: 1.25, pitch: 1.15 }, // fast, high energy video intro
+};
 
 const STARTERS = ["Tell me about yourself", "I had a long day", "Ask me something interesting", "Can you help me think something through?"];
 
@@ -32,7 +40,7 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
-  const voice = useVoice(companion.name);
+  const voice = useVoice(companion.name, VOICE_STYLES[companion.id]);
   const [voiceOn, setVoiceOn] = useState(false);
   const voiceOnRef = useRef(false);
 
@@ -129,7 +137,7 @@ export default function Chat({
         update(reply);
       }
       if (!reply) update("...", true);
-      else if (voiceOnRef.current) voice.speak(reply, replyId);
+      else if (voiceOnRef.current) voice.speak(stripRefs(reply), replyId);
     } catch {
       if (controller.signal.aborted) {
         if (!reply) setMessages((prev) => prev.filter((m) => m.id !== replyId));
@@ -231,19 +239,31 @@ export default function Chat({
             </div>
             {messages.map((m, i) => {
               const cont = i > 0 && messages[i - 1].role === m.role;
+              const { body, refs } = m.role === "assistant" ? splitRefs(m.content) : { body: m.content, refs: [] as string[] };
               return (
                 <div key={m.id} className={`bubble-row ${m.role} ${cont ? "cont" : ""}`}>
                   {m.role === "assistant" && <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} image={companion.image} size={28} />}
-                  <div className={`bubble ${m.role} ${m.failed ? "failed" : ""}`}>
-                    {m.content || (
-                      <span className="dots" aria-label={`${companion.name} is typing`}><i /><i /><i /></span>
+                  <div className="bubble-col">
+                    <div className={`bubble ${m.role} ${m.failed ? "failed" : ""}`}>
+                      {body || (
+                        <span className="dots" aria-label={`${companion.name} is typing`}><i /><i /><i /></span>
+                      )}
+                    </div>
+                    {refs.length > 0 && (
+                      <div className="refs">
+                        {refs.map((t) => (
+                          <span key={t} className="ref-tag" title="This reply used a stored memory">
+                            <BookIcon /> From memory: {t}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   {m.role === "assistant" && voice.canSpeak && m.content && !m.failed && (
                     <button
                       type="button"
                       className={`play-btn ${voice.speakingId === m.id ? "on" : ""}`}
-                      onClick={() => (voice.speakingId === m.id ? voice.stopSpeaking() : voice.speak(m.content, m.id))}
+                      onClick={() => (voice.speakingId === m.id ? voice.stopSpeaking() : voice.speak(body, m.id))}
                       aria-label={voice.speakingId === m.id ? "Stop reading" : "Read aloud"}
                     >
                       {voice.speakingId === m.id ? <StopIcon /> : <PlayIcon />}

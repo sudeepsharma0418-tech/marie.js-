@@ -8,6 +8,8 @@ const PRIVATE = ["/home", "/admin", "/memories", "/messages", "/people", "/chat"
 export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value);
   const { pathname } = req.nextUrl;
+  // Files like /companions/luna.svg are public pictures, not private pages.
+  if (/\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next();
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isPrivate = PRIVATE.some((p) => pathname === p || pathname.startsWith(`${p}/`));
