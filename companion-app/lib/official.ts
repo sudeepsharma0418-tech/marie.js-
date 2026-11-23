@@ -243,6 +243,8 @@ export const SIMULATION_IDS = [SCHOOL_SIM_ID, MRBEAST_SIM_ID];
 
 type Sim = {
   id: string;
+  // Illustrations live at /demo/sim/<art>-<n>.svg, one per timeline event.
+  art: string;
   data: {
     name: string; image: string; avatar: string; vibe: string; category: string;
     tagline: string; personality: string; backstory: string; greeting: string; guide: string;
@@ -253,6 +255,7 @@ type Sim = {
 const SIMULATIONS: Sim[] = [
   {
     id: SCHOOL_SIM_ID,
+    art: "trump",
     data: {
       name: "AI Trump Simulation",
       image: "/companions/trump-sim.png",
@@ -288,6 +291,7 @@ const SIMULATIONS: Sim[] = [
   },
   {
     id: MRBEAST_SIM_ID,
+    art: "beast",
     data: {
       name: "AI MrBeast Simulation",
       image: "/companions/creator-sim.jpg",
@@ -346,16 +350,21 @@ export async function ensureSchoolSim() {
         });
         // Its public record timeline. Fixed ids mean it is only ever added once,
         // even when several first visits happen at the same moment.
-        await db.memory.createMany({
-          data: sim.timeline.map((m, i) => ({
-            ...m,
-            id: `${sim.id}-event-${i + 1}`,
-            category: "Milestones",
-            userId: row.userId,
-            companionId: sim.id,
-          })),
-          skipDuplicates: true,
-        });
+        const events = sim.timeline.map((m, i) => ({
+          ...m,
+          id: `${sim.id}-event-${i + 1}`,
+          image: `/demo/sim/${sim.art}-${i + 1}.svg`,
+          category: "Milestones",
+          userId: row.userId,
+          companionId: sim.id,
+        }));
+        await db.memory.createMany({ data: events, skipDuplicates: true });
+        // Keep pictures and wording current on events added by an earlier version.
+        await db.$transaction(
+          events.map((e) =>
+            db.memory.updateMany({ where: { id: e.id }, data: { image: e.image, title: e.title, story: e.story, place: e.place } }),
+          ),
+        );
         if (admin) await db.memory.updateMany({ where: { companionId: sim.id }, data: { userId: admin.id } });
       } catch (err) {
         // Two visits at the same moment can both try to create it; the other one won.

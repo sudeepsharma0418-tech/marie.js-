@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#efe4d3"/>
+<rect x="0" y="470" width="800" height="130" fill="#c9b39a"/>
+<rect x="140" y="160" width="520" height="190" rx="20" fill="#1d2233"/><rect x="160" y="180" width="480" height="150" rx="12" fill="#11141f"/>
+<text x="400" y="292" text-anchor="middle" font-family="Courier New, monospace" font-weight="700" font-size="96" fill="#7fe3d6">100,000</text>
+<g fill="#f6c445"><circle cx="160" cy="420" r="8"/><circle cx="640" cy="420" r="8"/></g>
+<text x="400" y="430" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#6b4a32">about 40 hours of counting</text></svg>
