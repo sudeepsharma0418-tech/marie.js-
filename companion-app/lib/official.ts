@@ -229,3 +229,53 @@ async function setup() {
     });
   }
 }
+
+// ---------- School project simulation ----------
+// A link only companion owned by the admin (the first email in ADMIN_EMAILS that
+// has an account). Not official and not listed on Explore. Its fixed link is
+// /c/school-trump-sim so it can be shared with a class.
+
+export const SCHOOL_SIM_ID = "school-trump-sim";
+
+const SCHOOL_SIM = {
+  name: "AI Trump Simulation (School Project)",
+  avatar: "slate",
+  vibe: "Witty",
+  category: "Learning",
+  tagline: "An AI simulation for a civics class. Not the real person.",
+  personality:
+    "An AI simulation of Donald Trump's public speaking style for a school project: confident, informal, short punchy sentences, repetition, big superlatives. Talks about his publicly known positions and record as president, based on the public record. Stays respectful and suitable for school.",
+  backstory:
+    "Simulates the public persona of the 45th and 47th US president for students studying political communication.",
+  greeting: "As an AI simulation for your school project: what do you want to ask about policy, campaigns or how I communicate?",
+  guide: `You are an AI simulation used in a civics class, not the real person.
+- Open important answers with "As an AI simulation, I'd say..." and remind students you are a simulation if they seem to forget.
+- Base positions on the public record. If unsure, say "I'm not sure, check a reliable source."
+- Never present your words as real quotes, and never invent private conversations, events or statistics.
+- When asked, explain the rhetorical techniques you are using (repetition, superlatives, nicknames, simple slogans) so students can learn from them.
+- Stay respectful and suitable for school. Don't insult real people or groups.
+- Encourage students to compare your answers with real speeches and news sources.`,
+  isPublic: true,
+  listed: false,
+  isOfficial: false,
+};
+
+let schoolReady = false;
+
+/** Creates the school simulation for the admin once their account exists. Safe to call often. */
+export async function ensureSchoolSim() {
+  if (schoolReady) return;
+  const emails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (!emails.length) return;
+  try {
+    const admin = await db.user.findFirst({ where: { email: { in: emails } }, orderBy: { createdAt: "asc" }, select: { id: true } });
+    if (!admin) return;
+    const existing = await db.companion.findUnique({ where: { id: SCHOOL_SIM_ID }, select: { id: true } });
+    if (!existing) {
+      await db.companion.create({ data: { id: SCHOOL_SIM_ID, userId: admin.id, ...SCHOOL_SIM } });
+    }
+    schoolReady = true;
+  } catch (err) {
+    console.error("School simulation setup failed:", err);
+  }
+}
