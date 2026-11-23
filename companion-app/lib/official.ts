@@ -231,9 +231,10 @@ async function setup() {
 }
 
 // ---------- School project simulation ----------
-// A link only companion owned by the admin (the first email in ADMIN_EMAILS that
-// has an account). Not official and not listed on Explore. Its fixed link is
-// /c/school-trump-sim so it can be shared with a class.
+// A clearly labeled public figure simulation for a class demo, owned by the admin
+// (the first email in ADMIN_EMAILS that has an account). Shown on Explore so the
+// class can find it, and also reachable at the fixed link /c/school-trump-sim.
+// Delete it from its Edit page after the presentation.
 
 export const SCHOOL_SIM_ID = "school-trump-sim";
 
@@ -256,7 +257,7 @@ const SCHOOL_SIM = {
 - Stay respectful and suitable for school. Don't insult real people or groups.
 - Encourage students to compare your answers with real speeches and news sources.`,
   isPublic: true,
-  listed: false,
+  listed: true,
   isOfficial: false,
 };
 
@@ -273,6 +274,8 @@ export async function ensureSchoolSim() {
     const existing = await db.companion.findUnique({ where: { id: SCHOOL_SIM_ID }, select: { id: true } });
     if (!existing) {
       await db.companion.create({ data: { id: SCHOOL_SIM_ID, userId: admin.id, ...SCHOOL_SIM } });
+    } else {
+      await db.companion.update({ where: { id: SCHOOL_SIM_ID }, data: { isPublic: true, listed: true } });
     }
     schoolReady = true;
   } catch (err) {
