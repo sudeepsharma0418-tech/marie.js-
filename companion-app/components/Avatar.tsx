@@ -5,18 +5,21 @@ export function Avatar({
   name,
   avatar,
   photoId,
+  image,
   size = 44,
 }: {
   name: string;
   avatar: string;
   photoId?: string | null;
+  image?: string | null;
   size?: number;
 }) {
   const style = { "--size": `${size}px` } as React.CSSProperties;
-  if (photoId) {
+  const src = photoId ? `/api/photos/${photoId}?size=thumb` : image && image.startsWith("/companions/") ? image : "";
+  if (src) {
     return (
       <span className="av photo" style={style} aria-hidden>
-        <img src={`/api/photos/${photoId}?size=thumb`} alt="" loading="lazy" />
+        <img src={src} alt="" loading="lazy" />
       </span>
     );
   }

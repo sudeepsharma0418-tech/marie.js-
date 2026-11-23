@@ -21,7 +21,7 @@ export default async function Home() {
       orderBy: { updatedAt: "desc" },
       take: 6,
       include: {
-        companion: { select: { name: true, avatar: true, photoId: true } },
+        companion: { select: { name: true, avatar: true, photoId: true, image: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1, select: { content: true, role: true } },
       },
     }),
@@ -60,7 +60,7 @@ export default async function Home() {
               const last = c.messages[0];
               return (
                 <Link key={c.id} href={`/chat/${c.id}`} className="list-item">
-                  <Avatar name={c.companion.name} avatar={c.companion.avatar} photoId={c.companion.photoId} size={40} />
+                  <Avatar name={c.companion.name} avatar={c.companion.avatar} photoId={c.companion.photoId} image={c.companion.image} size={40} />
                   <div className="grow">
                     <strong>{c.companion.name}</strong>
                     <p className="small muted truncate">

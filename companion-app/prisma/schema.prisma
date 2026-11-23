@@ -48,6 +48,10 @@ model Companion {
   isPublic    Boolean  @default(false)
   isOfficial  Boolean  @default(false)
   photoId     String?
+  // A built in picture (used by official companions), e.g. /companions/luna.svg
+  image       String   @default("")
+  // Extra guidance on how this companion helps, added to its instructions.
+  guide       String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

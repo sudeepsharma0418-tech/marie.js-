@@ -55,7 +55,7 @@ export default async function CompanionPage({ params }: Props) {
     <main className="page">
       <section className="panel pad stack-lg" style={{ padding: 32 }}>
         <div className="profile-hero">
-          <Avatar name={c.name} avatar={c.avatar} photoId={c.photoId} size={112} />
+          <Avatar name={c.name} avatar={c.avatar} photoId={c.photoId} image={c.image} size={112} />
           <div className="stack" style={{ gap: 10 }}>
             <div className="row wrap" style={{ gap: 8 }}>
               <span className="badge plain">{c.category}</span>
