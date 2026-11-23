@@ -15,7 +15,7 @@ export type CardCompanion = {
   isOfficial: boolean;
   isPublic?: boolean;
   listed?: boolean;
-  user: { username: string | null; name: string };
+  user: { username: string | null; name: string; isSystem?: boolean };
   _count: { conversations: number };
 };
 
@@ -30,7 +30,7 @@ export const cardSelect = {
   isOfficial: true,
   isPublic: true,
   listed: true,
-  user: { select: { username: true, name: true } },
+  user: { select: { username: true, name: true, isSystem: true } },
   _count: { select: { conversations: true } },
 } as const;
 
@@ -42,7 +42,7 @@ export default function CompanionCard({ c, showPrivacy }: { c: CardCompanion; sh
         <div className="grow">
           <h3 className="truncate">{c.name}</h3>
           <span className="tiny faint truncate" style={{ display: "block" }}>
-            {c.isOfficial ? `By ${APP_NAME}` : `By @${c.user.username ?? c.user.name}`}
+            {c.isOfficial ? `By ${APP_NAME}` : c.user.isSystem ? "Class demo" : `By @${c.user.username ?? c.user.name}`}
           </span>
         </div>
         {showPrivacy && !c.isPublic && <span className="badge plain">Private</span>}
