@@ -8,9 +8,11 @@ import { Avatar } from "@/components/Avatar";
 import { BackIcon, BookIcon, BrainIcon, DotsIcon, MicIcon, PlayIcon, SendIcon, SpeakerIcon, SpeakerOffIcon, StopIcon } from "@/components/Icons";
 import { useVoice } from "@/components/useVoice";
 import { splitRefs, stripRefs } from "@/lib/refs";
+import { voiceStyle } from "@/lib/voices";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
-type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean };
+type LaneItem = { id: string; title: string; year: number | null; place: string; src: string };
+type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean; voice: string; hasClone: boolean };
 
 // Speaking styles for the featured simulations: pace and tone of a standard
 // computer voice, inspired by each one's on stage energy. Not voice imitation.
@@ -25,10 +27,12 @@ export default function Chat({
   conversation,
   companion,
   initialMessages,
+  lane,
 }: {
   conversation: { id: string; memory: string };
   companion: CompanionProps;
   initialMessages: Msg[];
+  lane: LaneItem[];
 }) {
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -40,14 +44,21 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
-  const voice = useVoice(companion.name, VOICE_STYLES[companion.id]);
+  const voice = useVoice(companion.name, VOICE_STYLES[companion.id] ?? voiceStyle(companion.voice), companion.hasClone ? companion.id : undefined);
   const [voiceOn, setVoiceOn] = useState(false);
   const voiceOnRef = useRef(false);
+
+  // Show the memory lane next to the chat on wide screens.
+  useEffect(() => {
+    if (lane.length && window.matchMedia("(min-width: 1000px)").matches) setPanelOpen(true);
+  }, [lane.length]);
 
   // Remember the voice setting on this device.
   useEffect(() => {
     try {
-      const on = localStorage.getItem("ml-voice") === "on";
+      const saved = localStorage.getItem("ml-voice");
+      // Companions with an uploaded voice speak out loud unless you turned voice off.
+      const on = saved === "on" || (companion.hasClone && saved !== "off");
       setVoiceOn(on);
       voiceOnRef.current = on;
     } catch {}
@@ -192,7 +203,7 @@ export default function Chat({
             </button>
           )}
           <button className={`btn quiet sm ${panelOpen ? "on" : ""}`} onClick={() => setPanelOpen((o) => !o)} aria-expanded={panelOpen}>
-            <BrainIcon /> <span className="hide-sm">Memory</span>
+            <BrainIcon /> <span className="hide-sm">Memory lane</span>
           </button>
           <div className="menu-wrap" ref={menuRef}>
             <button className="btn quiet icon-btn" onClick={() => setMenuOpen((o) => !o)} aria-label="Chat options" aria-expanded={menuOpen}>
@@ -332,9 +343,38 @@ export default function Chat({
       {panelOpen && (
         <aside className="memory-panel" aria-label="Memory">
           <div className="row between">
-            <h2>What {companion.name} remembers</h2>
+            <h2>Memory lane</h2>
             <button className="btn quiet icon-btn" onClick={() => setPanelOpen(false)} aria-label="Close">✕</button>
           </div>
+          {lane.length > 0 && (
+            <>
+              <ol className="lane">
+                {lane.map((m) => (
+                  <li key={m.id}>
+                    <button
+                      type="button"
+                      className="lane-item"
+                      title={`Ask about: ${m.title}`}
+                      onClick={() => {
+                        setInput(`Tell me about this moment: ${m.title}${m.year ? ` (${m.year})` : ""}`);
+                        inputRef.current?.focus();
+                        if (!window.matchMedia("(min-width: 1000px)").matches) setPanelOpen(false);
+                      }}
+                    >
+                      {m.src ? <img src={m.src} alt="" loading="lazy" /> : <span className="lane-dot" />}
+                      <span className="lane-text">
+                        {m.year && <span className="lane-year">{m.year}</span>}
+                        <span className="lane-title">{m.title}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <p className="tiny faint">Tap a moment to ask {companion.name} about it.</p>
+              <hr className="divider" />
+            </>
+          )}
+          <h3 className="small">What {companion.name} remembers about you</h3>
           {conversation.memory ? (
             <>
               <p className="memory">{conversation.memory}</p>

@@ -5,6 +5,9 @@ import { createCompanion, updateCompanion } from "@/app/actions";
 import { AVATARS, CATEGORIES, LIMITS, VIBES } from "@/lib/config";
 import { Avatar } from "./Avatar";
 import PhotoPicker from "./PhotoPicker";
+import VoiceUpload from "./VoiceUpload";
+import { previewVoice } from "./useVoice";
+import { VOICES, VOICE_KEYS, voiceStyle } from "@/lib/voices";
 
 export type CompanionDefaults = {
   id: string;
@@ -19,11 +22,13 @@ export type CompanionDefaults = {
   isPublic: boolean;
   listed: boolean;
   photoId: string | null;
+  voice: string;
+  voiceClone: { fileName: string } | null;
 };
 
-export type CompanionPreset = Partial<Omit<CompanionDefaults, "id" | "photoId">>;
+export type CompanionPreset = Partial<Omit<CompanionDefaults, "id" | "photoId" | "voiceClone">>;
 
-export default function CompanionForm({ initial, preset }: { initial?: CompanionDefaults; preset?: CompanionPreset }) {
+export default function CompanionForm({ initial, preset, cloning = false }: { initial?: CompanionDefaults; preset?: CompanionPreset; cloning?: boolean }) {
   // Defaults come from the companion being edited, or from a prefilled link.
   const d: CompanionPreset | undefined = initial ?? preset;
   const editing = Boolean(initial);
@@ -39,6 +44,8 @@ export default function CompanionForm({ initial, preset }: { initial?: Companion
   const [personality, setPersonality] = useState(d?.personality ?? "");
   const [backstory, setBackstory] = useState(d?.backstory ?? "");
   const [greeting, setGreeting] = useState(d?.greeting ?? "");
+  const [voice, setVoice] = useState<string>(d?.voice || "natural");
+  const [memCount, setMemCount] = useState(1);
   const [visibility, setVisibility] = useState<"private" | "link" | "public">(
     !d?.isPublic ? "private" : d.listed === false ? "link" : "public",
   );
@@ -120,6 +127,50 @@ export default function CompanionForm({ initial, preset }: { initial?: Companion
         First message <span className="hint">Optional</span>
         <input name="greeting" maxLength={LIMITS.greeting} value={greeting} onChange={(e) => setGreeting(e.target.value)} placeholder="e.g. There you are! Pull up a chair." />
       </label>
+
+      {!editing && (
+        <div className="label">
+          <span>Memories <span className="hint">Optional. Add moments you shared. {name || "They"} will remember them and can bring them up in chat.</span></span>
+          <div className="mem-rows">
+            {Array.from({ length: memCount }, (_, i) => (
+              <div className="mem-row" key={i}>
+                <PhotoPicker name={`mem_photo_${i}`} label="Add photo" />
+                <div className="grow mem-fields">
+                  <div className="row" style={{ gap: 8 }}>
+                    <input name={`mem_title_${i}`} maxLength={LIMITS.memoryTitle} placeholder="e.g. Fishing at the lake" className="grow" aria-label={`Memory ${i + 1} title`} />
+                    <input name={`mem_year_${i}`} inputMode="numeric" maxLength={4} placeholder="Year" style={{ width: 84 }} aria-label={`Memory ${i + 1} year`} />
+                  </div>
+                  <textarea name={`mem_story_${i}`} rows={2} maxLength={LIMITS.memoryStory} placeholder="What happened? A few words is enough." aria-label={`Memory ${i + 1} story`} />
+                </div>
+              </div>
+            ))}
+          </div>
+          {memCount < 6 && (
+            <button type="button" className="btn outline sm" style={{ alignSelf: "flex-start" }} onClick={() => setMemCount((n) => n + 1)}>
+              + Add another memory
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="label">
+        <span>Voice <span className="hint">How {name || "they"} sound when you turn voice on in chat. Tap to hear it.</span></span>
+        <input type="hidden" name="voice" value={voice} />
+        <div className="picker" role="radiogroup" aria-label="Voice">
+          {VOICE_KEYS.map((k) => (
+            <button type="button" key={k} role="radio" aria-checked={k === voice} title={VOICES[k].hint}
+              className={`chip ${k === voice ? "on" : ""}`}
+              onClick={() => {
+                setVoice(k);
+                previewVoice(greeting || `Hi, I'm ${name || "your companion"}. It's so good to talk to you.`, name || "companion", voiceStyle(k));
+              }}>
+              {VOICES[k].label}
+            </button>
+          ))}
+        </div>
+        <span className="hint">{VOICES[voice as keyof typeof VOICES]?.hint}. Uses your device&apos;s voice, so it sounds a little different on each device.</span>
+        <VoiceUpload enabled={cloning} companionName={name} initial={initial?.voiceClone} />
+      </div>
 
       <div className="label">
         Who can see and chat with them
