@@ -195,7 +195,7 @@ export function ensureSetup() {
 async function setup() {
   const system = await db.user.upsert({
     where: { email: SYSTEM_EMAIL },
-    update: { name: `${APP_NAME} Team` },
+    update: { name: `${APP_NAME} Team`, username: "memorylane" },
     create: {
       email: SYSTEM_EMAIL,
       name: `${APP_NAME} Team`,
@@ -263,22 +263,30 @@ const SCHOOL_SIM = {
 
 let schoolReady = false;
 
-/** Creates the school simulation for the admin once their account exists. Safe to call often. */
+/**
+ * Makes sure the class simulation exists. It belongs to the admin (first email in
+ * ADMIN_EMAILS with an account) when there is one, otherwise to the hidden
+ * MemoryLane account, so it always appears. Safe to call often.
+ */
 export async function ensureSchoolSim() {
   if (schoolReady) return;
-  const emails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-  if (!emails.length) return;
   try {
-    const admin = await db.user.findFirst({ where: { email: { in: emails } }, orderBy: { createdAt: "asc" }, select: { id: true } });
-    if (!admin) return;
-    const existing = await db.companion.findUnique({ where: { id: SCHOOL_SIM_ID }, select: { id: true } });
-    if (!existing) {
-      await db.companion.create({ data: { id: SCHOOL_SIM_ID, userId: admin.id, ...SCHOOL_SIM } });
-    } else {
-      await db.companion.update({ where: { id: SCHOOL_SIM_ID }, data: { isPublic: true, listed: true } });
-    }
-    schoolReady = true;
+    const emails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+    const admin = emails.length
+      ? await db.user.findFirst({ where: { email: { in: emails } }, orderBy: { createdAt: "asc" }, select: { id: true } })
+      : null;
+    const owner = admin ?? (await db.user.findUnique({ where: { email: SYSTEM_EMAIL }, select: { id: true } }));
+    if (!owner) return;
+
+    // Create it, or keep it on Explore and hand it to the admin once they have an account.
+    await db.companion.upsert({
+      where: { id: SCHOOL_SIM_ID },
+      create: { id: SCHOOL_SIM_ID, userId: owner.id, ...SCHOOL_SIM },
+      update: { isPublic: true, listed: true, ...(admin ? { userId: admin.id } : {}) },
+    });
+    if (admin || !emails.length) schoolReady = true;
   } catch (err) {
-    console.error("School simulation setup failed:", err);
+    // Two visits at the same moment can both try to create it; the other one won.
+    if ((err as { code?: string }).code !== "P2002") console.error("School simulation setup failed:", err);
   }
 }

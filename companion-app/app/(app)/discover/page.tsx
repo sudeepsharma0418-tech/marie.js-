@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { ensureSchoolSim, ensureSetup } from "@/lib/official";
 import { getUser } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/config";
 import CompanionCard, { cardSelect } from "@/components/CompanionCard";
@@ -12,6 +13,8 @@ type Search = { q?: string; cat?: string; tab?: string };
 
 export default async function Discover({ searchParams }: { searchParams: Promise<Search> }) {
   const { q = "", cat = "", tab = "all" } = await searchParams;
+  await ensureSetup();
+  await ensureSchoolSim();
   const user = await getUser();
 
   const where: Prisma.CompanionWhereInput = { isPublic: true, listed: true };

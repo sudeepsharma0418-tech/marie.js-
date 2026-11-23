@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { ensureSchoolSim } from "@/lib/official";
+import { ensureSchoolSim, ensureSetup } from "@/lib/official";
 import { memorySrc } from "@/lib/photos";
 import { getUser } from "@/lib/auth";
 import { compact, memoryWhen } from "@/lib/social";
@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CompanionPage({ params }: Props) {
   const { id } = await params;
+  await ensureSetup();
   await ensureSchoolSim();
   const user = await getUser();
   const c = await load(id, user?.id);
@@ -113,7 +114,7 @@ export default async function CompanionPage({ params }: Props) {
         <section className="panel pad stack">
           <span className="eyebrow">Made by</span>
           {c.user.isSystem ? (
-            <div className="row"><PersonAvatar name={`${APP_NAME} Team`} /><div><strong>The {APP_NAME} team</strong><p className="small muted">Official companion</p></div></div>
+            <div className="row"><PersonAvatar name={`${APP_NAME} Team`} /><div><strong>The {APP_NAME} team</strong><p className="small muted">{c.isOfficial ? "Official companion" : "Class demo"}</p></div></div>
           ) : (
             <Link href={`/u/${c.user.username}`} className="row">
               <PersonAvatar name={c.user.name} />
