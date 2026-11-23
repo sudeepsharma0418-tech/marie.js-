@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireMember } from "@/lib/auth";
 import { deleteCompanion } from "@/app/actions";
 import { CLONING_ENABLED } from "@/lib/elevenlabs";
+import { getSharedVoices } from "@/lib/sharedVoices";
 import CompanionForm from "@/components/CompanionForm";
 import ConfirmButton from "@/components/ConfirmButton";
 
@@ -12,7 +13,7 @@ export const metadata = { title: "Edit companion" };
 export default async function EditCompanionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireMember();
-  const c = await db.companion.findFirst({ where: { id, userId: user.id }, include: { voiceClone: { select: { fileName: true } } } });
+  const c = await db.companion.findFirst({ where: { id, userId: user.id }, include: { voiceClone: { select: { fileName: true, label: true } } } });
   if (!c) notFound();
 
   return (
@@ -25,8 +26,8 @@ export default async function EditCompanionPage({ params }: { params: Promise<{ 
       <CompanionForm initial={{
         id: c.id, name: c.name, avatar: c.avatar, vibe: c.vibe, category: c.category, tagline: c.tagline,
         personality: c.personality, backstory: c.backstory, greeting: c.greeting, isPublic: c.isPublic, listed: c.listed, photoId: c.photoId, voice: c.voice,
-        voiceClone: c.voiceClone,
-      }} cloning={CLONING_ENABLED} />
+        voiceClone: c.voiceClone ? { fileName: c.voiceClone.label || c.voiceClone.fileName } : null,
+      }} cloning={CLONING_ENABLED} sharedVoices={await getSharedVoices()} />
       <section className="panel pad row between wrap">
         <div>
           <strong>Delete {c.name}</strong>

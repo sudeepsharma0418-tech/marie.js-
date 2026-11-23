@@ -24,18 +24,23 @@ export async function POST(req: Request) {
   if (!user) return json({ error: "Please log in again." }, 401);
   if (!CLONING_ENABLED) return json({ error: "Voice cloning isn't turned on." }, 503);
 
-  const body = (await req.json().catch(() => ({}))) as { companionId?: string; text?: string };
+  const body = (await req.json().catch(() => ({}))) as { companionId?: string; voiceId?: string; text?: string };
   const text = stripRefs(String(body.text ?? "")).replace(/[*_#`>]/g, "").trim().slice(0, 800);
   if (!text) return json({ error: "Nothing to say." }, 400);
 
-  const companion = await db.companion.findFirst({
-    where: { id: String(body.companionId ?? ""), OR: [{ isPublic: true }, { userId: user.id }] },
-    select: { voiceClone: { select: { providerId: true } } },
-  });
-  if (!companion?.voiceClone) return json({ error: "This companion has no uploaded voice." }, 404);
+  // Either a companion's voice, or a shared voice being previewed in the form.
+  const clone = body.voiceId
+    ? await db.voiceClone.findFirst({ where: { id: String(body.voiceId), OR: [{ shared: true }, { userId: user.id }] }, select: { providerId: true } })
+    : (
+        await db.companion.findFirst({
+          where: { id: String(body.companionId ?? ""), OR: [{ isPublic: true }, { userId: user.id }] },
+          select: { voiceClone: { select: { providerId: true } } },
+        })
+      )?.voiceClone;
+  if (!clone) return json({ error: "This companion has no uploaded voice." }, 404);
   if (!allowed(user.id)) return json({ error: "Too many voice replies. Try again in a minute." }, 429);
 
-  const res = await speech(companion.voiceClone.providerId, text);
+  const res = await speech(clone.providerId, text);
   if (!res.ok || !res.body) {
     const raw = await res.text().catch(() => "");
     console.error("Speech failed:", res.status, raw.slice(0, 500));

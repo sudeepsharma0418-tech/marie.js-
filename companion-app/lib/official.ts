@@ -179,7 +179,7 @@ export const OFFICIAL = [
   },
 ];
 
-const SYSTEM_EMAIL = "system@companions.local";
+export const SYSTEM_EMAIL = "system@companions.local";
 
 let ready: Promise<void> | null = null;
 

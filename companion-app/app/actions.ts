@@ -147,13 +147,13 @@ async function readVoiceClone(form: FormData, userId: string): Promise<string | 
   const raw = str(form, "voiceCloneId");
   if (raw === "keep") return undefined;
   if (!raw) return null;
-  const clone = await db.voiceClone.findFirst({ where: { id: raw, userId }, select: { id: true } });
+  const clone = await db.voiceClone.findFirst({ where: { id: raw, OR: [{ userId }, { shared: true }] }, select: { id: true } });
   return clone?.id ?? null;
 }
 
 /** Deletes cloned voices no companion uses any more. */
 async function cleanupClones(userId: string) {
-  const unused = await db.voiceClone.findMany({ where: { userId, companions: { none: {} } } });
+  const unused = await db.voiceClone.findMany({ where: { userId, shared: false, companions: { none: {} } } });
   for (const c of unused) {
     await deleteClone(c.providerId);
     await db.voiceClone.delete({ where: { id: c.id } }).catch(() => {});

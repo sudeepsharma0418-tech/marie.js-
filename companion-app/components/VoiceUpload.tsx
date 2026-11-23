@@ -10,10 +10,12 @@ export default function VoiceUpload({
   enabled,
   companionName,
   initial,
+  shared = [],
 }: {
   enabled: boolean;
   companionName: string;
   initial?: { fileName: string } | null;
+  shared?: { id: string; label: string; hint: string }[];
 }) {
   // "keep" leaves an existing voice as it is; "" means none; otherwise a new upload's id.
   const [value, setValue] = useState(initial ? "keep" : "");
@@ -22,6 +24,26 @@ export default function VoiceUpload({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const [previewing, setPreviewing] = useState("");
+
+  async function preview(id: string) {
+    setError("");
+    setPreviewing(id);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ voiceId: id, text: `Hey! I'm ${companionName || "your companion"}. Let's go!` }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Couldn't play that voice.");
+      const a = new Audio(URL.createObjectURL(await res.blob()));
+      a.onended = () => setPreviewing("");
+      await a.play();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't play that voice.");
+      setPreviewing("");
+    }
+  }
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -55,6 +77,23 @@ export default function VoiceUpload({
     <div className="voice-upload">
       <input type="hidden" name="voiceCloneId" value={value} />
       <strong className="small">Use a real voice</strong>
+      {enabled && !hasVoice && shared.length > 0 && (
+        <div className="shared-voices">
+          {shared.map((v) => (
+            <div key={v.id} className="shared-voice">
+              <div className="grow">
+                <span className="small"><strong>🎙️ {v.label}</strong></span>
+                <span className="hint" style={{ display: "block" }}>{v.hint}</span>
+              </div>
+              <button type="button" className="btn quiet sm" disabled={previewing === v.id} onClick={() => preview(v.id)}>
+                {previewing === v.id ? "Playing..." : "Hear it"}
+              </button>
+              <button type="button" className="btn outline sm" onClick={() => { setValue(v.id); setFileName(v.label); }}>Use</button>
+            </div>
+          ))}
+          <span className="hint">Or upload your own recording:</span>
+        </div>
+      )}
       {!enabled ? (
         <span className="hint">Voice upload isn&apos;t turned on for this site yet.</span>
       ) : hasVoice ? (
