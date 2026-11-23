@@ -21,22 +21,26 @@ export type CompanionDefaults = {
   photoId: string | null;
 };
 
-export default function CompanionForm({ initial }: { initial?: CompanionDefaults }) {
+export type CompanionPreset = Partial<Omit<CompanionDefaults, "id" | "photoId">>;
+
+export default function CompanionForm({ initial, preset }: { initial?: CompanionDefaults; preset?: CompanionPreset }) {
+  // Defaults come from the companion being edited, or from a prefilled link.
+  const d: CompanionPreset | undefined = initial ?? preset;
   const editing = Boolean(initial);
   const [state, action, pending] = useActionState(editing ? updateCompanion : createCompanion, undefined);
 
-  const [name, setName] = useState(initial?.name ?? "");
+  const [name, setName] = useState(d?.name ?? "");
   const [avatar, setAvatar] = useState<string>(
     initial && (AVATARS as readonly string[]).includes(initial.avatar) ? initial.avatar : AVATARS[0],
   );
-  const [vibe, setVibe] = useState<string>(initial?.vibe ?? VIBES[0]);
-  const [category, setCategory] = useState<string>(initial?.category ?? CATEGORIES[0]);
-  const [tagline, setTagline] = useState(initial?.tagline ?? "");
-  const [personality, setPersonality] = useState(initial?.personality ?? "");
-  const [backstory, setBackstory] = useState(initial?.backstory ?? "");
-  const [greeting, setGreeting] = useState(initial?.greeting ?? "");
+  const [vibe, setVibe] = useState<string>(d?.vibe ?? VIBES[0]);
+  const [category, setCategory] = useState<string>(d?.category ?? CATEGORIES[0]);
+  const [tagline, setTagline] = useState(d?.tagline ?? "");
+  const [personality, setPersonality] = useState(d?.personality ?? "");
+  const [backstory, setBackstory] = useState(d?.backstory ?? "");
+  const [greeting, setGreeting] = useState(d?.greeting ?? "");
   const [visibility, setVisibility] = useState<"private" | "link" | "public">(
-    !initial?.isPublic ? "private" : initial.listed ? "public" : "link",
+    !d?.isPublic ? "private" : d.listed === false ? "link" : "public",
   );
 
   return (
