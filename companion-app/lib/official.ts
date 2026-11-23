@@ -290,7 +290,7 @@ const SIMULATIONS: Sim[] = [
     id: MRBEAST_SIM_ID,
     data: {
       name: "AI MrBeast Simulation",
-      image: "/companions/creator-sim.svg",
+      image: "/companions/creator-sim.jpg",
       avatar: "blue",
       vibe: "Playful",
       category: "Creative",
