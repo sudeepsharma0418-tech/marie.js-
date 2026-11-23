@@ -45,9 +45,9 @@ export default async function CompanionPage({ params }: Props) {
   const memories = showMemories
     ? await db.memory.findMany({
         where: { companionId: c.id },
-        orderBy: [{ year: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+        orderBy: [{ year: { sort: "asc", nulls: "last" } }, { month: { sort: "asc", nulls: "first" } }, { createdAt: "asc" }],
         take: 24,
-        select: { id: true, title: true, year: true, month: true, photoId: true, image: true, story: true, place: true },
+        select: { id: true, title: true, year: true, month: true, photoId: true, image: true, credit: true, story: true, place: true },
       })
     : [];
   const more = await db.companion.findMany({
@@ -145,6 +145,7 @@ export default async function CompanionPage({ params }: Props) {
                   <div className="memory-meta">
                     <strong className="truncate">{m.title}</strong>
                     <span className="tiny faint">{[memoryWhen(m), m.place].filter(Boolean).join(" · ")}</span>
+                    {m.credit && <span className="tiny faint" style={{ fontSize: "0.68rem" }}>{m.credit}</span>}
                   </div>
                 </Link>
               ))}

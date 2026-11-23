@@ -249,7 +249,8 @@ type Sim = {
     name: string; image: string; avatar: string; vibe: string; category: string;
     tagline: string; personality: string; backstory: string; greeting: string; guide: string;
   };
-  timeline: { year: number; month: number | null; place: string; title: string; story: string }[];
+  // An event can use a real, free to use photo instead of its illustration.
+  timeline: { year: number; month: number | null; place: string; title: string; story: string; photo?: string; credit?: string }[];
 };
 
 const SIMULATIONS: Sim[] = [
@@ -279,10 +280,10 @@ const SIMULATIONS: Sim[] = [
     timeline: [
       { year: 2015, month: 6, place: "Trump Tower, New York", title: "Announces presidential campaign", story: "Launched his first presidential campaign with a speech at Trump Tower, focused on immigration, trade and jobs." },
       { year: 2016, month: 11, place: "United States", title: "Wins the 2016 presidential election", story: "Defeated Hillary Clinton in the Electoral College while losing the national popular vote." },
-      { year: 2017, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 45th president", story: "Sworn in on January 20, 2017. The inaugural address centered on the theme of \"America First\"." },
+      { year: 2017, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 45th president", story: "Sworn in on January 20, 2017. The inaugural address centered on the theme of \"America First\".", photo: "/demo/sim/trump-3.jpg", credit: "Photo: The White House, public domain (Wikimedia Commons)" },
       { year: 2017, month: 12, place: "Washington, D.C.", title: "Signs the Tax Cuts and Jobs Act", story: "Signed a major tax law that cut the corporate tax rate from 35% to 21% and changed individual income tax brackets." },
       { year: 2018, month: 3, place: "Washington, D.C.", title: "Announces steel and aluminum tariffs", story: "Announced tariffs of 25% on imported steel and 10% on imported aluminum, citing national security." },
-      { year: 2018, month: 6, place: "Singapore", title: "Singapore summit with Kim Jong Un", story: "Became the first sitting US president to meet a North Korean leader, at a summit in Singapore on June 12, 2018." },
+      { year: 2018, month: 6, place: "Singapore", title: "Singapore summit with Kim Jong Un", story: "Became the first sitting US president to meet a North Korean leader, at a summit in Singapore on June 12, 2018.", photo: "/demo/sim/trump-6.jpg", credit: "Photo: Shealeah Craighead, The White House, public domain (Wikimedia Commons)" },
       { year: 2020, month: 1, place: "Washington, D.C.", title: "Signs the USMCA trade agreement", story: "Signed the United States-Mexico-Canada Agreement, which replaced NAFTA." },
       { year: 2020, month: 11, place: "United States", title: "Loses the 2020 presidential election", story: "Lost the 2020 election to Joe Biden." },
       { year: 2024, month: 11, place: "United States", title: "Wins the 2024 presidential election", story: "Defeated Kamala Harris to win a second, non consecutive term." },
@@ -350,10 +351,11 @@ export async function ensureSchoolSim() {
         });
         // Its public record timeline. Fixed ids mean it is only ever added once,
         // even when several first visits happen at the same moment.
-        const events = sim.timeline.map((m, i) => ({
+        const events = sim.timeline.map(({ photo, credit, ...m }, i) => ({
           ...m,
           id: `${sim.id}-event-${i + 1}`,
-          image: `/demo/sim/${sim.art}-${i + 1}.svg`,
+          image: photo ?? `/demo/sim/${sim.art}-${i + 1}.svg`,
+          credit: credit ?? "",
           category: "Milestones",
           userId: row.userId,
           companionId: sim.id,
@@ -362,7 +364,7 @@ export async function ensureSchoolSim() {
         // Keep pictures and wording current on events added by an earlier version.
         await db.$transaction(
           events.map((e) =>
-            db.memory.updateMany({ where: { id: e.id }, data: { image: e.image, title: e.title, story: e.story, place: e.place } }),
+            db.memory.updateMany({ where: { id: e.id }, data: { image: e.image, credit: e.credit, title: e.title, story: e.story, place: e.place } }),
           ),
         );
         if (admin) await db.memory.updateMany({ where: { companionId: sim.id }, data: { userId: admin.id } });
