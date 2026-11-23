@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireMember } from "@/lib/auth";
-import { SIMULATION_IDS } from "@/lib/official";
 import { memorySrc } from "@/lib/photos";
 import { CLONING_ENABLED } from "@/lib/elevenlabs";
 import Chat from "./Chat";
@@ -23,8 +22,8 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
   if (!convo) notFound();
   const messages = [...convo.messages].reverse();
 
-  // The companion's memory lane: its owner's memories, or the public timeline of a simulation.
-  const showLane = convo.companion.userId === user.id || SIMULATION_IDS.includes(convo.companion.id);
+  // The companion's memory lane: memories its creator connected to it.
+  const showLane = convo.companion.userId === user.id;
   const lane = showLane
     ? await db.memory.findMany({
         where: { companionId: convo.companion.id },

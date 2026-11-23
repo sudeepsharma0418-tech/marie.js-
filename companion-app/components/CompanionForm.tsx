@@ -28,7 +28,17 @@ export type CompanionDefaults = {
 
 export type CompanionPreset = Partial<Omit<CompanionDefaults, "id" | "photoId" | "voiceClone">>;
 
-export default function CompanionForm({ initial, preset, cloning = false }: { initial?: CompanionDefaults; preset?: CompanionPreset; cloning?: boolean }) {
+export default function CompanionForm({
+  initial,
+  preset,
+  cloning = false,
+  sharedVoices = [],
+}: {
+  initial?: CompanionDefaults;
+  preset?: CompanionPreset;
+  cloning?: boolean;
+  sharedVoices?: { id: string; label: string; hint: string }[];
+}) {
   // Defaults come from the companion being edited, or from a prefilled link.
   const d: CompanionPreset | undefined = initial ?? preset;
   const editing = Boolean(initial);
@@ -169,7 +179,7 @@ export default function CompanionForm({ initial, preset, cloning = false }: { in
           ))}
         </div>
         <span className="hint">{VOICES[voice as keyof typeof VOICES]?.hint}. Uses your device&apos;s voice, so it sounds a little different on each device.</span>
-        <VoiceUpload enabled={cloning} companionName={name} initial={initial?.voiceClone} />
+        <VoiceUpload enabled={cloning} companionName={name} initial={initial?.voiceClone} shared={sharedVoices} />
       </div>
 
       <div className="label">

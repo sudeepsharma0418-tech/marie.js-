@@ -1,6 +1,7 @@
 import { requireMember } from "@/lib/auth";
 import { CATEGORIES, LIMITS, VIBES } from "@/lib/config";
 import { CLONING_ENABLED } from "@/lib/elevenlabs";
+import { getSharedVoices } from "@/lib/sharedVoices";
 import CompanionForm, { type CompanionPreset } from "@/components/CompanionForm";
 
 export const metadata = { title: "Create a companion" };
@@ -28,6 +29,7 @@ function presetFrom(q: Search): CompanionPreset | undefined {
 export default async function NewCompanionPage({ searchParams }: { searchParams: Promise<Search> }) {
   await requireMember();
   const preset = presetFrom(await searchParams);
+  const sharedVoices = await getSharedVoices();
   return (
     <main className="page narrow">
       <div>
@@ -38,7 +40,7 @@ export default async function NewCompanionPage({ searchParams }: { searchParams:
             : "A mentor, a friend, a character, or someone you want to remember. Private unless you choose to share."}
         </p>
       </div>
-      <CompanionForm preset={preset} cloning={CLONING_ENABLED} />
+      <CompanionForm preset={preset} cloning={CLONING_ENABLED} sharedVoices={sharedVoices} />
     </main>
   );
 }

@@ -192,6 +192,10 @@ model VoiceClone {
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   providerId String
   fileName   String      @default("")
+  // Shared voices (built into the app) can be picked by anyone. slug names them.
+  shared     Boolean     @default(false)
+  slug       String?     @unique
+  label      String      @default("")
   consentAt  DateTime    @default(now())
   createdAt  DateTime    @default(now())
   companions Companion[]
