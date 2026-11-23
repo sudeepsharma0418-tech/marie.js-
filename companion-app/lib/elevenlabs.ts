@@ -1,6 +1,7 @@
 // Voice cloning and speech with ElevenLabs. Set ELEVENLABS_API_KEY to turn it on.
 const BASE = process.env.ELEVENLABS_BASE_URL || "https://api.elevenlabs.io";
-const KEY = process.env.ELEVENLABS_API_KEY || "";
+// Trim spaces, line breaks and quotes that sometimes come along when pasting.
+const KEY = (process.env.ELEVENLABS_API_KEY || "").trim().replace(/^["']+|["']+$/g, "").trim();
 // Fast, low cost model. Override with ELEVENLABS_MODEL if you like.
 const MODEL = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
 
@@ -28,6 +29,19 @@ export function explain(status: number, body: string, action: string) {
   if (b.includes("permission") || b.includes("missing_permissions")) return `${action}: the API key is missing a permission (turn on Voices and Text to Speech for the key).${why}`;
   if (status === 401) return `${action}: the voice service rejected the API key.${why}`;
   return `${action}: ${msg || `voice service error ${status}`}.`;
+}
+
+/** What the app sees for the key, without revealing it. For the admin page. */
+export async function keyCheck() {
+  if (!KEY) return { set: false as const };
+  const shape = { set: true as const, startsSk: KEY.startsWith("sk_"), length: KEY.length, last4: KEY.slice(-4) };
+  try {
+    const res = await fetch(`${BASE}/v1/voices`, { headers: { "xi-api-key": KEY }, cache: "no-store" });
+    if (res.ok) return { ...shape, ok: true, message: "ElevenLabs accepted the key." };
+    return { ...shape, ok: false, message: explain(res.status, await res.text(), "ElevenLabs refused the key") };
+  } catch {
+    return { ...shape, ok: false, message: "Couldn't reach ElevenLabs." };
+  }
 }
 
 /** Creates an instant voice clone from one recording. Returns the provider's voice id. */

@@ -6,6 +6,7 @@ import { compact, timeAgo } from "@/lib/social";
 import { PersonAvatar } from "@/components/Avatar";
 import { SearchIcon } from "@/components/Icons";
 import type { Prisma } from "@prisma/client";
+import { keyCheck } from "@/lib/elevenlabs";
 
 export const metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
@@ -80,6 +81,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         </div>
       </div>
 
+      <VoiceKeyStatus />
+
       <section className="stat-grid">
         {stats.map(([label, value, sub]) => (
           <div key={label} className="card">
@@ -126,5 +129,30 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         </div>
       </section>
     </main>
+  );
+}
+
+/** Shows whether the ElevenLabs key works, without showing the key itself. */
+async function VoiceKeyStatus() {
+  const k = await keyCheck();
+  return (
+    <section className="panel pad stack" style={{ gap: 6 }}>
+      <strong>Voice key (ELEVENLABS_API_KEY)</strong>
+      {!k.set ? (
+        <p className="small muted">Not set. Add it in Vercel, then redeploy.</p>
+      ) : (
+        <>
+          <p className="small">
+            {k.ok ? "✅ " : "❌ "}{k.message}
+          </p>
+          <p className="small muted">
+            What the site has: {k.startsSk ? "starts with sk_" : "does NOT start with sk_"} · {k.length} characters · ends in …{k.last4}
+          </p>
+          {!k.ok && (
+            <p className="tiny faint">A full key is about 50 characters and is only shown once, right after you create it in ElevenLabs. After changing it in Vercel, redeploy.</p>
+          )}
+        </>
+      )}
+    </section>
   );
 }
