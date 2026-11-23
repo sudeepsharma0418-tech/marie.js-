@@ -362,6 +362,10 @@ export async function ensureSchoolSim() {
           userId: row.userId,
           companionId: sim.id,
         }));
+        // Remove leftover copies of these events made by an older version (random ids).
+        await db.memory.deleteMany({
+          where: { companionId: sim.id, title: { in: events.map((e) => e.title) }, id: { notIn: events.map((e) => e.id) } },
+        });
         await db.memory.createMany({ data: events, skipDuplicates: true });
         // Keep pictures and wording current on events added by an earlier version.
         await db.$transaction(
