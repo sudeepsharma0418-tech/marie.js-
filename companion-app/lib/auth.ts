@@ -48,3 +48,10 @@ export async function requireMember() {
   if (!user.username) redirect("/welcome");
   return { ...user, username: user.username };
 }
+
+/** Admins are the emails listed in the ADMIN_EMAILS setting, separated by commas. */
+export function isAdmin(email: string | null | undefined) {
+  if (!email) return false;
+  const list = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return list.includes(email.toLowerCase());
+}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { ensureSchoolSim } from "@/lib/official";
 import { memorySrc } from "@/lib/photos";
 import { getUser } from "@/lib/auth";
 import { compact, memoryWhen } from "@/lib/social";
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CompanionPage({ params }: Props) {
   const { id } = await params;
+  await ensureSchoolSim();
   const user = await getUser();
   const c = await load(id, user?.id);
   if (!c) notFound();

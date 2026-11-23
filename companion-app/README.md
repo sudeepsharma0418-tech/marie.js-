@@ -59,6 +59,7 @@ The app is called "Companion" for now. To rename it, set `NEXT_PUBLIC_APP_NAME="
 | `CHAT_LIMIT_PER_MINUTE` | `15` | Messages one user can send per minute |
 | `CHAT_LIMIT_PER_DAY` | `400` | Messages one user can send per day |
 | `NEXT_PUBLIC_APP_NAME` | `MemoryLane` | The app's name |
+| `ADMIN_EMAILS` | (empty) | Emails that can open `/admin`, separated by commas |
 
 ## Put it online (Vercel)
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getUser } from "@/lib/auth";
 import { APP_NAME } from "@/lib/config";
-import { ensureSetup } from "@/lib/official";
+import { ensureSchoolSim, ensureSetup } from "@/lib/official";
 import { unreadCount } from "@/lib/social";
 import NavLinks from "@/components/NavLinks";
 import { Logo } from "@/components/Icons";
@@ -12,6 +12,7 @@ import { PersonAvatar } from "@/components/Avatar";
 // for visitors who aren't signed in.
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   await ensureSetup();
+  await ensureSchoolSim();
   const user = await getUser();
 
   if (!user) {
