@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { requireMember } from "@/lib/auth";
 import { MEMORY_CATEGORIES } from "@/lib/config";
 import { memoryWhen } from "@/lib/social";
+import { memorySrc } from "@/lib/photos";
+import { loadSampleMemories } from "@/app/actions";
 import { SearchIcon } from "@/components/Icons";
 import type { Prisma } from "@prisma/client";
 
@@ -30,7 +32,7 @@ export default async function Memories({ searchParams }: { searchParams: Promise
       where,
       orderBy: [{ year: { sort: "desc", nulls: "last" } }, { month: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
       take: 200,
-      select: { id: true, title: true, story: true, year: true, month: true, place: true, category: true, photoId: true },
+      select: { id: true, title: true, story: true, year: true, month: true, place: true, category: true, photoId: true, image: true },
     }),
     db.memory.findMany({ where: { userId: user.id, year: { not: null } }, distinct: ["year"], select: { year: true }, orderBy: { year: "desc" } }),
     db.memory.count({ where: { userId: user.id } }),
@@ -66,7 +68,12 @@ export default async function Memories({ searchParams }: { searchParams: Promise
         <div className="ink-panel empty" style={{ padding: "64px 24px" }}>
           <h2 style={{ fontSize: "2rem", fontWeight: 400, letterSpacing: "-0.025em" }}>Start with one moment.</h2>
           <p className="muted" style={{ maxWidth: 440 }}>A photo from a holiday, a birthday, or an ordinary Sunday. Add the year and a few words about why it matters.</p>
-          <Link href="/memories/new" className="btn light lg" style={{ marginTop: 12 }}>Add your first memory</Link>
+          <div className="row wrap" style={{ justifyContent: "center", marginTop: 12 }}>
+            <Link href="/memories/new" className="btn light lg">Add your first memory</Link>
+            <form action={loadSampleMemories}>
+              <button className="btn lg" style={{ color: "var(--on-ink)", borderColor: "rgba(241,239,234,.3)" }}>Load sample memories</button>
+            </form>
+          </div>
         </div>
       ) : (
         <>
@@ -111,7 +118,7 @@ export default async function Memories({ searchParams }: { searchParams: Promise
                       <Link key={m.id} href={`/memories/${m.id}`} className={`tl-item ${side.get(m.id)}`}>
                         <span className="tl-dot" aria-hidden />
                         <div className="tl-card">
-                          {m.photoId && <img src={`/api/photos/${m.photoId}?size=thumb`} alt="" loading="lazy" />}
+                          {memorySrc(m) && <img src={memorySrc(m)} alt="" loading="lazy" />}
                           <div className="tl-text">
                             <p className="tiny faint">{[memoryWhen(m), m.place].filter(Boolean).join(" · ") || m.category}</p>
                             <h3>{m.title}</h3>
@@ -127,9 +134,9 @@ export default async function Memories({ searchParams }: { searchParams: Promise
           ) : (
             <div className="gallery">
               {memories.map((m) => (
-                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${m.photoId ? "" : "text-only"}`}>
-                  {m.photoId ? (
-                    <img src={`/api/photos/${m.photoId}?size=thumb`} alt="" loading="lazy" />
+                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
+                  {memorySrc(m) ? (
+                    <img src={memorySrc(m)} alt="" loading="lazy" />
                   ) : (
                     <p className="memory-quote clamp4">{m.story}</p>
                   )}

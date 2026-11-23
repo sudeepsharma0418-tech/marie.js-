@@ -17,6 +17,7 @@ export type CompanionDefaults = {
   backstory: string;
   greeting: string;
   isPublic: boolean;
+  listed: boolean;
   photoId: string | null;
 };
 
@@ -34,7 +35,9 @@ export default function CompanionForm({ initial }: { initial?: CompanionDefaults
   const [personality, setPersonality] = useState(initial?.personality ?? "");
   const [backstory, setBackstory] = useState(initial?.backstory ?? "");
   const [greeting, setGreeting] = useState(initial?.greeting ?? "");
-  const [isPublic, setIsPublic] = useState(initial?.isPublic ?? false);
+  const [visibility, setVisibility] = useState<"private" | "link" | "public">(
+    !initial?.isPublic ? "private" : initial.listed ? "public" : "link",
+  );
 
   return (
     <form action={action} className="form panel pad" style={{ padding: 28 }}>
@@ -46,7 +49,7 @@ export default function CompanionForm({ initial }: { initial?: CompanionDefaults
           <strong>{name || "Your companion"}</strong>
           <p className="small muted truncate">{tagline || "A short line about who they are"}</p>
         </div>
-        <span className="badge plain">{isPublic ? "Public" : "Private"}</span>
+        <span className="badge plain">{visibility === "public" ? "Public" : visibility === "link" ? "Link only" : "Private"}</span>
       </div>
 
       <label>
@@ -114,15 +117,24 @@ export default function CompanionForm({ initial }: { initial?: CompanionDefaults
         <input name="greeting" maxLength={LIMITS.greeting} value={greeting} onChange={(e) => setGreeting(e.target.value)} placeholder="e.g. There you are! Pull up a chair." />
       </label>
 
-      <label className="switch">
-        <input type="checkbox" name="isPublic" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
-        <span>
-          Share publicly
-          <span className="hint" style={{ display: "block" }}>
-            Anyone can find and chat with this companion. Their chats stay private. Never share a companion based on a real person without their family&apos;s consent.
-          </span>
-        </span>
-      </label>
+      <div className="label">
+        Who can see and chat with them
+        <input type="hidden" name="visibility" value={visibility} />
+        <div className="choice-list" role="radiogroup" aria-label="Visibility">
+          {([
+            ["private", "Only me", "Nobody else can find or open this companion."],
+            ["link", "Anyone with the link", "Share the link with a teacher, friend or family. Not shown on Explore."],
+            ["public", "Public", "Anyone can find it on Explore and chat with it."],
+          ] as const).map(([value, title, hint]) => (
+            <button type="button" key={value} role="radio" aria-checked={visibility === value}
+              className={`choice ${visibility === value ? "on" : ""}`} onClick={() => setVisibility(value)}>
+              <strong>{title}</strong>
+              <span className="hint">{hint}</span>
+            </button>
+          ))}
+        </div>
+        <span className="hint">Everyone&apos;s conversations stay private. Never share a companion based on a real person without their family&apos;s consent.</span>
+      </div>
 
       {state?.error && <p className="error" role="alert">{state.error}</p>}
 

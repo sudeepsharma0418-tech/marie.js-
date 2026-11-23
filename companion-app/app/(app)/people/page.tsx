@@ -24,7 +24,7 @@ export default async function People({ searchParams }: { searchParams: Promise<{
     take: 60,
     select: {
       id: true, name: true, username: true, bio: true,
-      _count: { select: { companions: { where: { isPublic: true } } } },
+      _count: { select: { companions: { where: { isPublic: true, listed: true } } } },
     },
   });
 

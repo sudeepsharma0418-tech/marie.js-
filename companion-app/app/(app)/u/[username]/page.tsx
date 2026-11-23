@@ -25,7 +25,7 @@ export default async function Profile({ params }: Props) {
 
   const isMe = viewer?.id === u.id;
   const companions = await db.companion.findMany({
-    where: { userId: u.id, ...(isMe ? {} : { isPublic: true }) },
+    where: { userId: u.id, ...(isMe ? {} : { isPublic: true, listed: true }) },
     orderBy: { updatedAt: "desc" },
     select: cardSelect,
   });

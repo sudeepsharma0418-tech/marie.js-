@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireMember } from "@/lib/auth";
 import { memoryWhen } from "@/lib/social";
+import { memorySrc } from "@/lib/photos";
 import { Avatar } from "@/components/Avatar";
 
 export const metadata = { title: "Memory" };
@@ -12,7 +13,7 @@ export default async function MemoryPage({ params }: { params: Promise<{ id: str
   const user = await requireMember();
   const m = await db.memory.findFirst({
     where: { id, userId: user.id },
-    include: { companion: { select: { id: true, name: true, avatar: true, photoId: true } } },
+    include: { companion: { select: { id: true, name: true, avatar: true, photoId: true, image: true } } },
   });
   if (!m) notFound();
   const when = memoryWhen(m);
@@ -25,8 +26,8 @@ export default async function MemoryPage({ params }: { params: Promise<{ id: str
       </div>
 
       <article className="stack-lg">
-        {m.photoId && (
-          <img className="memory-photo" src={`/api/photos/${m.photoId}`} alt={m.title} />
+        {memorySrc(m, "full") && (
+          <img className="memory-photo" src={memorySrc(m, "full")} alt={m.title} />
         )}
         <div className="stack" style={{ gap: 10 }}>
           <p className="small faint">{[when, m.place, m.category].filter(Boolean).join(" · ")}</p>
@@ -36,7 +37,7 @@ export default async function MemoryPage({ params }: { params: Promise<{ id: str
 
         {m.companion && (
           <Link href={`/c/${m.companion.id}`} className="panel row" style={{ padding: 18, gap: 14 }}>
-            <Avatar name={m.companion.name} avatar={m.companion.avatar} photoId={m.companion.photoId} size={44} />
+            <Avatar name={m.companion.name} avatar={m.companion.avatar} photoId={m.companion.photoId} image={m.companion.image} size={44} />
             <div className="grow">
               <p className="small faint">Connected to</p>
               <strong>{m.companion.name}</strong>

@@ -29,3 +29,7 @@ export function Logo() {
   );
 }
 export const BookIcon = (p: P) => (<svg {...base} {...p}><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 21V5M8 7h7" /></svg>);
+export const MicIcon = (p: P) => (<svg {...base} {...p}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>);
+export const SpeakerIcon = (p: P) => (<svg {...base} {...p}><path d="M4 9v6h4l5 4V5L8 9z" /><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>);
+export const SpeakerOffIcon = (p: P) => (<svg {...base} {...p}><path d="M4 9v6h4l5 4V5L8 9z" /><path d="m17 9 5 6m0-6-5 6" /></svg>);
+export const PlayIcon = (p: P) => (<svg {...base} {...p}><path d="M8 5v14l11-7z" fill="currentColor" /></svg>);

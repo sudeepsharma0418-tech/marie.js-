@@ -19,6 +19,7 @@ export const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 export const SUPPORTS_FALLBACK = ["claude-sonnet-5-5", "claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-fable-5-2"].includes(MODEL);
 
 type CompanionInfo = {
+  guide?: string;
   name: string;
   vibe: string;
   personality: string;
@@ -44,7 +45,7 @@ Your vibe: ${companion.vibe}.
 Your personality:
 ${companion.personality}
 ${companion.backstory ? `\nYour backstory:\n${companion.backstory}\n` : ""}
-How to talk:
+${companion.guide ? `How you help:\n${companion.guide}\n\n` : ""}How to talk:
 - Stay in character as ${companion.name}. Speak naturally, like a real conversation, not like an assistant.
 - Keep most replies short, a few sentences, unless ${userName} asks for more.
 - Remember what ${userName} has told you and bring it up when it fits.

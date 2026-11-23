@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { memorySrc } from "@/lib/photos";
 import { getUser } from "@/lib/auth";
 import { compact, memoryWhen } from "@/lib/social";
 import { APP_NAME } from "@/lib/config";
@@ -9,7 +10,7 @@ import { startChat } from "@/app/actions";
 import { Avatar, PersonAvatar } from "@/components/Avatar";
 import CompanionCard, { cardSelect } from "@/components/CompanionCard";
 import CopyLink from "@/components/CopyLink";
-import { CheckIcon, GlobeIcon, LockIcon } from "@/components/Icons";
+import { CheckIcon, GlobeIcon, LockIcon, ShareIcon } from "@/components/Icons";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -41,11 +42,11 @@ export default async function CompanionPage({ params }: Props) {
         where: { companionId: c.id },
         orderBy: [{ year: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
         take: 12,
-        select: { id: true, title: true, year: true, month: true, photoId: true, story: true, place: true },
+        select: { id: true, title: true, year: true, month: true, photoId: true, image: true, story: true, place: true },
       })
     : [];
   const more = await db.companion.findMany({
-    where: { isPublic: true, id: { not: c.id }, category: c.category },
+    where: { isPublic: true, listed: true, id: { not: c.id }, category: c.category },
     orderBy: { conversations: { _count: "desc" } },
     take: 3,
     select: cardSelect,
@@ -55,14 +56,16 @@ export default async function CompanionPage({ params }: Props) {
     <main className="page">
       <section className="panel pad stack-lg" style={{ padding: 32 }}>
         <div className="profile-hero">
-          <Avatar name={c.name} avatar={c.avatar} photoId={c.photoId} size={112} />
+          <Avatar name={c.name} avatar={c.avatar} photoId={c.photoId} image={c.image} size={112} />
           <div className="stack" style={{ gap: 10 }}>
             <div className="row wrap" style={{ gap: 8 }}>
               <span className="badge plain">{c.category}</span>
               {c.isOfficial && <span className="badge"><CheckIcon className="" /> Official</span>}
-              {isOwner && (c.isPublic
-                ? <span className="badge"><GlobeIcon className="" /> Public</span>
-                : <span className="badge plain"><LockIcon className="" /> Only you</span>)}
+              {isOwner && (!c.isPublic
+                ? <span className="badge plain"><LockIcon className="" /> Only you</span>
+                : c.listed
+                  ? <span className="badge"><GlobeIcon className="" /> Public</span>
+                  : <span className="badge"><ShareIcon className="" /> Anyone with the link</span>)}
             </div>
             <h1>{c.name}</h1>
             {c.tagline && <p className="muted" style={{ fontSize: "1.05rem" }}>{c.tagline}</p>}
@@ -131,8 +134,8 @@ export default async function CompanionPage({ params }: Props) {
           {memories.length > 0 ? (
             <div className="memory-strip">
               {memories.map((m) => (
-                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${m.photoId ? "" : "text-only"}`}>
-                  {m.photoId ? <img src={`/api/photos/${m.photoId}?size=thumb`} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
+                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
+                  {memorySrc(m) ? <img src={memorySrc(m)} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
                   <div className="memory-meta">
                     <strong className="truncate">{m.title}</strong>
                     <span className="tiny faint">{[memoryWhen(m), m.place].filter(Boolean).join(" · ")}</span>

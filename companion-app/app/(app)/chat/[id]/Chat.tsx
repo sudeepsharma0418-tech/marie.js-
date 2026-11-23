@@ -5,10 +5,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { forgetMemory, leaveChat, resetChat } from "@/app/actions";
 import { LIMITS } from "@/lib/config";
 import { Avatar } from "@/components/Avatar";
-import { BackIcon, BrainIcon, DotsIcon, SendIcon, StopIcon } from "@/components/Icons";
+import { BackIcon, BrainIcon, DotsIcon, MicIcon, PlayIcon, SendIcon, SpeakerIcon, SpeakerOffIcon, StopIcon } from "@/components/Icons";
+import { useVoice } from "@/components/useVoice";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
-type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; vibe: string; tagline: string; isOwner: boolean };
+type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean };
 
 const STARTERS = ["Tell me about yourself", "I had a long day", "Ask me something interesting", "Can you help me think something through?"];
 
@@ -31,6 +32,28 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
+  const voice = useVoice(companion.name);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const voiceOnRef = useRef(false);
+
+  // Remember the voice setting on this device.
+  useEffect(() => {
+    try {
+      const on = localStorage.getItem("ml-voice") === "on";
+      setVoiceOn(on);
+      voiceOnRef.current = on;
+    } catch {}
+  }, []);
+
+  function toggleVoice() {
+    const next = !voiceOn;
+    setVoiceOn(next);
+    voiceOnRef.current = next;
+    if (!next) voice.stopSpeaking();
+    try {
+      localStorage.setItem("ml-voice", next ? "on" : "off");
+    } catch {}
+  }
 
   // Server actions (like a fresh start) send fresh props.
   useEffect(() => setMessages(initialMessages), [initialMessages]);
@@ -106,6 +129,7 @@ export default function Chat({
         update(reply);
       }
       if (!reply) update("...", true);
+      else if (voiceOnRef.current) voice.speak(reply, replyId);
     } catch {
       if (controller.signal.aborted) {
         if (!reply) setMessages((prev) => prev.filter((m) => m.id !== replyId));
@@ -123,7 +147,20 @@ export default function Chat({
     const text = (textArg ?? input).trim();
     if (!text || busy) return;
     if (!textArg) setInput("");
+    voice.stopSpeaking();
     run({ text });
+  }
+
+  // Tap the mic, speak, and the words are sent when you stop talking.
+  function talk() {
+    if (voice.listening) return voice.stopListening();
+    voice.listen(
+      (t) => setInput(t),
+      (t) => {
+        setInput("");
+        send(t);
+      },
+    );
   }
 
   const last = messages[messages.length - 1];
@@ -136,11 +173,16 @@ export default function Chat({
       <main className="chat" style={{ height: "auto", minHeight: 0 }}>
         <div className="chat-head">
           <Link href="/home" className="btn quiet icon-btn" aria-label="Back"><BackIcon /></Link>
-          <Link href={`/c/${companion.id}`}><Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} size={40} /></Link>
+          <Link href={`/c/${companion.id}`}><Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} image={companion.image} size={40} /></Link>
           <div className="grow">
             <Link href={`/c/${companion.id}`}><strong>{companion.name}</strong></Link>
             <div className={`sub ${busy ? "typing" : ""}`} aria-live="polite">{busy ? "typing..." : `${companion.vibe} · AI companion`}</div>
           </div>
+          {voice.canSpeak && (
+            <button className="btn quiet sm" onClick={toggleVoice} aria-pressed={voiceOn} title={voiceOn ? "Replies are read aloud" : "Read replies aloud"}>
+              {voiceOn ? <SpeakerIcon /> : <SpeakerOffIcon />} <span className="hide-sm">{voiceOn ? "Voice on" : "Voice off"}</span>
+            </button>
+          )}
           <button className={`btn quiet sm ${panelOpen ? "on" : ""}`} onClick={() => setPanelOpen((o) => !o)} aria-expanded={panelOpen}>
             <BrainIcon /> <span className="hide-sm">Memory</span>
           </button>
@@ -182,7 +224,7 @@ export default function Chat({
         >
           <div className="messages-inner">
             <div className="intro">
-              <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} size={72} />
+              <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} image={companion.image} size={72} />
               <p className="display">{companion.name}</p>
               {companion.tagline && <p className="muted small">{companion.tagline}</p>}
               <p className="tiny faint">An AI companion. It can make mistakes and is not a real person.</p>
@@ -191,12 +233,22 @@ export default function Chat({
               const cont = i > 0 && messages[i - 1].role === m.role;
               return (
                 <div key={m.id} className={`bubble-row ${m.role} ${cont ? "cont" : ""}`}>
-                  {m.role === "assistant" && <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} size={28} />}
+                  {m.role === "assistant" && <Avatar name={companion.name} avatar={companion.avatar} photoId={companion.photoId} image={companion.image} size={28} />}
                   <div className={`bubble ${m.role} ${m.failed ? "failed" : ""}`}>
                     {m.content || (
                       <span className="dots" aria-label={`${companion.name} is typing`}><i /><i /><i /></span>
                     )}
                   </div>
+                  {m.role === "assistant" && voice.canSpeak && m.content && !m.failed && (
+                    <button
+                      type="button"
+                      className={`play-btn ${voice.speakingId === m.id ? "on" : ""}`}
+                      onClick={() => (voice.speakingId === m.id ? voice.stopSpeaking() : voice.speak(m.content, m.id))}
+                      aria-label={voice.speakingId === m.id ? "Stop reading" : "Read aloud"}
+                    >
+                      {voice.speakingId === m.id ? <StopIcon /> : <PlayIcon />}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -220,6 +272,11 @@ export default function Chat({
               ))}
             </div>
           )}
+          {(voice.listening || voice.error) && (
+            <p className={`voice-status ${voice.error ? "error" : ""}`} aria-live="polite">
+              {voice.error || "Listening... speak now, then pause to send."}
+            </p>
+          )}
           <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
             <textarea
               ref={inputRef}
@@ -231,12 +288,18 @@ export default function Chat({
                   send();
                 }
               }}
-              placeholder={`Message ${companion.name}`}
+              placeholder={voice.listening ? "Listening..." : `Message ${companion.name}`}
               aria-label={`Message ${companion.name}`}
               rows={1}
               maxLength={LIMITS.message}
               autoFocus
             />
+            {voice.canListen && !busy && (
+              <button type="button" className={`btn quiet mic-btn ${voice.listening ? "on" : ""}`} onClick={talk}
+                aria-label={voice.listening ? "Stop listening" : "Talk"} aria-pressed={voice.listening}>
+                <MicIcon />
+              </button>
+            )}
             {busy ? (
               <button type="button" className="btn outline" onClick={() => abortRef.current?.abort()} aria-label="Stop"><StopIcon /></button>
             ) : (

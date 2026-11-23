@@ -45,9 +45,16 @@ model Companion {
   greeting    String   @default("")
   // Old per companion memory. Memory now lives on each conversation.
   memory      String   @default("")
+  // isPublic: anyone with the link can open and chat with it.
+  // listed: it also appears on Explore and the creator's profile.
   isPublic    Boolean  @default(false)
+  listed      Boolean  @default(true)
   isOfficial  Boolean  @default(false)
   photoId     String?
+  // A built in picture (used by official companions), e.g. /companions/luna.svg
+  image       String   @default("")
+  // Extra guidance on how this companion helps, added to its instructions.
+  guide       String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -154,6 +161,8 @@ model Memory {
   companionId String?
   companion   Companion? @relation(fields: [companionId], references: [id], onDelete: SetNull)
   photoId     String?
+  // Built in illustration (sample memories), e.g. /demo/lake.svg
+  image       String     @default("")
   title       String
   story       String     @default("")
   year        Int?

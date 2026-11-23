@@ -14,7 +14,7 @@ export default async function Discover({ searchParams }: { searchParams: Promise
   const { q = "", cat = "", tab = "all" } = await searchParams;
   const user = await getUser();
 
-  const where: Prisma.CompanionWhereInput = { isPublic: true };
+  const where: Prisma.CompanionWhereInput = { isPublic: true, listed: true };
   if (tab === "official") where.isOfficial = true;
   if (tab === "community") where.isOfficial = false;
   if ((CATEGORIES as readonly string[]).includes(cat)) where.category = cat;

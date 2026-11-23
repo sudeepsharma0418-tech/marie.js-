@@ -23,7 +23,7 @@ export default async function EditCompanionPage({ params }: { params: Promise<{ 
       </div>
       <CompanionForm initial={{
         id: c.id, name: c.name, avatar: c.avatar, vibe: c.vibe, category: c.category, tagline: c.tagline,
-        personality: c.personality, backstory: c.backstory, greeting: c.greeting, isPublic: c.isPublic, photoId: c.photoId,
+        personality: c.personality, backstory: c.backstory, greeting: c.greeting, isPublic: c.isPublic, listed: c.listed, photoId: c.photoId,
       }} />
       <section className="panel pad row between wrap">
         <div>

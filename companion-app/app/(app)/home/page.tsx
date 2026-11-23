@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { memorySrc } from "@/lib/photos";
 import { requireMember } from "@/lib/auth";
 import { memoryWhen, timeAgo } from "@/lib/social";
 import { Avatar } from "@/components/Avatar";
@@ -21,13 +22,13 @@ export default async function Home() {
       orderBy: { updatedAt: "desc" },
       take: 6,
       include: {
-        companion: { select: { name: true, avatar: true, photoId: true } },
+        companion: { select: { name: true, avatar: true, photoId: true, image: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1, select: { content: true, role: true } },
       },
     }),
     db.companion.findMany({ where: { userId: user.id }, orderBy: { updatedAt: "desc" }, take: 6, select: cardSelect }),
     db.companion.findMany({
-      where: { isPublic: true, userId: { not: user.id }, conversations: { none: { userId: user.id } } },
+      where: { isPublic: true, listed: true, userId: { not: user.id }, conversations: { none: { userId: user.id } } },
       orderBy: [{ isOfficial: "desc" }, { conversations: { _count: "desc" } }],
       take: 3,
       select: cardSelect,
@@ -36,7 +37,7 @@ export default async function Home() {
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
       take: 4,
-      select: { id: true, title: true, year: true, month: true, place: true, photoId: true, story: true },
+      select: { id: true, title: true, year: true, month: true, place: true, photoId: true, image: true, story: true },
     }),
   ]);
 
@@ -60,7 +61,7 @@ export default async function Home() {
               const last = c.messages[0];
               return (
                 <Link key={c.id} href={`/chat/${c.id}`} className="list-item">
-                  <Avatar name={c.companion.name} avatar={c.companion.avatar} photoId={c.companion.photoId} size={40} />
+                  <Avatar name={c.companion.name} avatar={c.companion.avatar} photoId={c.companion.photoId} image={c.companion.image} size={40} />
                   <div className="grow">
                     <strong>{c.companion.name}</strong>
                     <p className="small muted truncate">
@@ -103,8 +104,8 @@ export default async function Home() {
         {memories.length > 0 ? (
           <div className="memory-strip">
             {memories.map((m) => (
-              <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${m.photoId ? "" : "text-only"}`}>
-                {m.photoId ? <img src={`/api/photos/${m.photoId}?size=thumb`} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
+              <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
+                {memorySrc(m) ? <img src={memorySrc(m)} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
                 <div className="memory-meta">
                   <strong className="truncate">{m.title}</strong>
                   <span className="tiny faint">{[memoryWhen(m), m.place].filter(Boolean).join(" · ")}</span>
