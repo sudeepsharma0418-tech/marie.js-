@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#151a29"/><path d="M180 0 L100 460 L260 460 Z" fill="#f6e7a8" opacity=".18"/><path d="M400 0 L320 460 L480 460 Z" fill="#f6e7a8" opacity=".18"/><path d="M620 0 L540 460 L700 460 Z" fill="#f6e7a8" opacity=".18"/>
+<rect x="0" y="460" width="800" height="140" fill="#2b2f38"/><rect x="0" y="440" width="800" height="24" fill="#3a3f4b"/>
+<g fill="#f6c445"><circle cx="180" cy="40" r="16"/><circle cx="400" cy="40" r="16"/><circle cx="620" cy="40" r="16"/></g>
+<rect x="250" y="250" width="300" height="140" rx="14" fill="#1d2233" stroke="#7fe3d6" stroke-width="4"/>
+<text x="400" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="34" fill="#7fe3d6">GAME</text>
+<text x="400" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="34" fill="#f6c445">SHOW</text>
+<g fill="#e04848"><rect x="120" y="400" width="40" height="40" rx="6"/><rect x="640" y="400" width="40" height="40" rx="6"/></g></svg>

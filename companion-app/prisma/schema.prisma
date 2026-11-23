@@ -163,6 +163,8 @@ model Memory {
   photoId     String?
   // Built in illustration (sample memories), e.g. /demo/lake.svg
   image       String     @default("")
+  // Credit line for a built in photo, e.g. "Photo: The White House, public domain".
+  credit      String     @default("")
   title       String
   story       String     @default("")
   year        Int?

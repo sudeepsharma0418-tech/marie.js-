@@ -27,7 +27,10 @@ export default async function MemoryPage({ params }: { params: Promise<{ id: str
 
       <article className="stack-lg">
         {memorySrc(m, "full") && (
-          <img className="memory-photo" src={memorySrc(m, "full")} alt={m.title} />
+          <figure style={{ margin: 0 }}>
+            <img className="memory-photo" src={memorySrc(m, "full")} alt={m.title} />
+            {m.credit && <figcaption className="tiny faint" style={{ marginTop: 8 }}>{m.credit}</figcaption>}
+          </figure>
         )}
         <div className="stack" style={{ gap: 10 }}>
           <p className="small faint">{[when, m.place, m.category].filter(Boolean).join(" · ")}</p>
