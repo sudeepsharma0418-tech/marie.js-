@@ -42,7 +42,7 @@ export default function CompanionCard({ c, showPrivacy }: { c: CardCompanion; sh
         <div className="grow">
           <h3 className="truncate">{c.name}</h3>
           <span className="tiny faint truncate" style={{ display: "block" }}>
-            {c.isOfficial ? `By ${APP_NAME}` : c.user.isSystem ? "AI simulation" : `By @${c.user.username ?? c.user.name}`}
+            {c.isOfficial ? `By ${APP_NAME}` : c.user.isSystem ? APP_NAME : `By @${c.user.username ?? c.user.name}`}
           </span>
         </div>
         {showPrivacy && !c.isPublic && <span className="badge plain">Private</span>}

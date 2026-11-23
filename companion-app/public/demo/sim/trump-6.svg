@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#e6eef5"/>
-<path d="M0 360 L80 300 L120 330 L180 250 L230 320 L300 280 L360 330 L440 230 L500 320 L580 270 L640 330 L720 260 L800 320 V600 H0Z" fill="#9fb3c8"/>
-<rect x="0" y="430" width="800" height="170" fill="#d7c9b2"/>
-<rect x="210" y="380" width="380" height="24" rx="6" fill="#6b4428"/><rect x="230" y="404" width="16" height="110" fill="#5a381f"/><rect x="554" y="404" width="16" height="110" fill="#5a381f"/>
-<rect x="170" y="300" width="60" height="140" rx="10" fill="#7a5a3c"/><rect x="570" y="300" width="60" height="140" rx="10" fill="#7a5a3c"/>
-<rect x="380" y="320" width="40" height="60" rx="6" fill="#e8eef4" opacity=".8"/>
-<path d="M380 240 V380 M420 240 V380" stroke="#6b6b6b" stroke-width="4"/>
-<rect x="320" y="240" width="60" height="40" fill="#b22234"/><rect x="320" y="240" width="26" height="20" fill="#3c3b6e"/><g fill="#ffffff"><rect x="346" y="248" width="34" height="5"/><rect x="346" y="262" width="34" height="5"/></g>
-<rect x="420" y="240" width="60" height="40" fill="#024fa2"/><rect x="420" y="252" width="60" height="16" fill="#ed1c27"/><rect x="420" y="250" width="60" height="3" fill="#ffffff"/><rect x="420" y="267" width="60" height="3" fill="#ffffff"/><circle cx="440" cy="260" r="6" fill="#ffffff"/></svg>

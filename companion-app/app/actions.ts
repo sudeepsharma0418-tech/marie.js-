@@ -9,7 +9,6 @@ import { AVATARS, CATEGORIES, LIMITS, MEMORY_CATEGORIES, USERNAME_RE, VIBES } fr
 import { ownPhotoId } from "@/lib/photos";
 import { VOICE_KEYS } from "@/lib/voices";
 import { deleteClone } from "@/lib/elevenlabs";
-import { SIMULATION_IDS } from "@/lib/official";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -219,8 +218,7 @@ export async function updateCompanion(_prev: FormState, form: FormData): Promise
   if ("error" in parsed) return parsed;
 
   const photoId = await ownPhotoId(str(form, "photoId"), user.id);
-  // Public figure simulations never get a cloned voice.
-  const voiceCloneId = SIMULATION_IDS.includes(id) ? null : await readVoiceClone(form, user.id);
+  const voiceCloneId = await readVoiceClone(form, user.id);
   const { count } = await db.companion.updateMany({
     where: { id, userId: user.id },
     data: { ...parsed.data, photoId, ...(voiceCloneId !== undefined ? { voiceCloneId } : {}) },

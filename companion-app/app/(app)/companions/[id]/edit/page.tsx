@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { requireMember } from "@/lib/auth";
 import { deleteCompanion } from "@/app/actions";
 import { CLONING_ENABLED } from "@/lib/elevenlabs";
-import { SIMULATION_IDS } from "@/lib/official";
 import CompanionForm from "@/components/CompanionForm";
 import ConfirmButton from "@/components/ConfirmButton";
 
@@ -27,7 +26,7 @@ export default async function EditCompanionPage({ params }: { params: Promise<{ 
         id: c.id, name: c.name, avatar: c.avatar, vibe: c.vibe, category: c.category, tagline: c.tagline,
         personality: c.personality, backstory: c.backstory, greeting: c.greeting, isPublic: c.isPublic, listed: c.listed, photoId: c.photoId, voice: c.voice,
         voiceClone: c.voiceClone,
-      }} cloning={CLONING_ENABLED && !SIMULATION_IDS.includes(c.id)} />
+      }} cloning={CLONING_ENABLED} />
       <section className="panel pad row between wrap">
         <div>
           <strong>Delete {c.name}</strong>

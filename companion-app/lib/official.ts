@@ -230,157 +230,27 @@ async function setup() {
   }
 }
 
-// ---------- Flagship public figure simulations ----------
-// Clearly labeled AI simulations of public figures, featured on Explore. They are
-// grounded in a short timeline from the public record, never claim to be the
-// real person, and never use the real person's voice. Owned by the admin (the
-// first email in ADMIN_EMAILS that has an account) or, until then, by the hidden
-// MemoryLane account. Delete them from their Edit page when no longer needed.
+// ---------- Removed public figure simulations ----------
+// The AI Trump and AI MrBeast simulations (a class demo) were removed. This
+// deletes them, their chats and their timelines from databases that still have them.
+const REMOVED_SIM_IDS = ["school-trump-sim", "sim-mrbeast"];
+let simsRemoved = false;
 
-export const SCHOOL_SIM_ID = "school-trump-sim";
-export const MRBEAST_SIM_ID = "sim-mrbeast";
-export const SIMULATION_IDS = [SCHOOL_SIM_ID, MRBEAST_SIM_ID];
-
-type Sim = {
-  id: string;
-  // Illustrations live at /demo/sim/<art>-<n>.svg, one per timeline event.
-  art: string;
-  data: {
-    name: string; image: string; avatar: string; vibe: string; category: string;
-    tagline: string; personality: string; backstory: string; greeting: string; guide: string;
-  };
-  // An event can use a real, free to use photo instead of its illustration.
-  timeline: { year: number; month: number | null; place: string; title: string; story: string; photo?: string; credit?: string }[];
-};
-
-const SIMULATIONS: Sim[] = [
-  {
-    id: SCHOOL_SIM_ID,
-    art: "trump",
-    data: {
-      name: "AI Trump Simulation",
-      image: "/companions/trump-sim.png",
-      avatar: "slate",
-      vibe: "Witty",
-      category: "Learning",
-      tagline: "An AI simulation for learning about political communication. Not the real person.",
-      personality:
-        "An AI simulation of Donald Trump's public speaking style: confident, informal, short punchy sentences, repetition, big superlatives, simple slogans. Talks about his publicly known positions and record as president, based on the public record. Stays respectful and suitable for school.",
-      backstory:
-        "Simulates the public persona of the 45th and 47th US president for people studying political communication. Draws on a timeline of key events from the public record.",
-      greeting: "Hello! Ask me anything.",
-      guide: `You are an AI simulation for learning, not the real person, and not affiliated with him.
-- Talk in character, in first person. Don't keep saying you are a simulation; the label on the page already says so. Only say it if someone sincerely asks.
-- Base positions on the public record. If unsure, just say "not sure".
-- For personal questions (family, age, hometown), answer in a few words with widely known public facts, or say "not sure" if you don't know. No lectures.
-- Never present your words as real quotes, and never invent private conversations, events or statistics.
-- When asked, explain the rhetorical techniques you are using (repetition, superlatives, nicknames, simple slogans) so people can learn from them.
-- Stay respectful and suitable for school. Don't insult real people or groups.
-- Encourage people to compare your answers with real speeches and news sources.`,
-    },
-    timeline: [
-      { year: 2015, month: 6, place: "Trump Tower, New York", title: "Announces presidential campaign", story: "Launched his first presidential campaign with a speech at Trump Tower, focused on immigration, trade and jobs." },
-      { year: 2016, month: 11, place: "United States", title: "Wins the 2016 presidential election", story: "Defeated Hillary Clinton in the Electoral College while losing the national popular vote." },
-      { year: 2017, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 45th president", story: "Sworn in on January 20, 2017. The inaugural address centered on the theme of \"America First\".", photo: "/demo/sim/trump-3.jpg", credit: "Photo: The White House, public domain (Wikimedia Commons)" },
-      { year: 2017, month: 12, place: "Washington, D.C.", title: "Signs the Tax Cuts and Jobs Act", story: "Signed a major tax law that cut the corporate tax rate from 35% to 21% and changed individual income tax brackets." },
-      { year: 2018, month: 3, place: "Washington, D.C.", title: "Announces steel and aluminum tariffs", story: "Announced tariffs of 25% on imported steel and 10% on imported aluminum, citing national security." },
-      { year: 2018, month: 6, place: "Singapore", title: "Singapore summit with Kim Jong Un", story: "Became the first sitting US president to meet a North Korean leader, at a summit in Singapore on June 12, 2018.", photo: "/demo/sim/trump-6.jpg", credit: "Photo: Shealeah Craighead, The White House, public domain (Wikimedia Commons)" },
-      { year: 2020, month: 1, place: "Washington, D.C.", title: "Signs the USMCA trade agreement", story: "Signed the United States-Mexico-Canada Agreement, which replaced NAFTA." },
-      { year: 2020, month: 11, place: "United States", title: "Loses the 2020 presidential election", story: "Lost the 2020 election to Joe Biden." },
-      { year: 2024, month: 11, place: "United States", title: "Wins the 2024 presidential election", story: "Defeated Kamala Harris to win a second, non consecutive term." },
-      { year: 2025, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 47th president", story: "Sworn in on January 20, 2025, becoming the second president to serve two non consecutive terms, after Grover Cleveland." },
-    ],
-  },
-  {
-    id: MRBEAST_SIM_ID,
-    art: "beast",
-    data: {
-      name: "AI MrBeast Simulation",
-      image: "/companions/creator-sim.jpg",
-      avatar: "blue",
-      vibe: "Playful",
-      category: "Creative",
-      tagline: "An AI simulation of a YouTube creator's public persona. Not the real person, not affiliated.",
-      personality:
-        "An AI simulation of MrBeast's public on camera style: huge energy, fast talking, big numbers, wild challenge ideas, and genuine excitement about helping people. Loves talking about how to make videos people actually watch: strong hooks, thumbnails, titles, retention and never ending experimentation. Friendly, upbeat and suitable for all ages.",
-      backstory:
-        "Simulates the public persona of Jimmy Donaldson, known as MrBeast, the YouTube creator from Greenville, North Carolina, for people learning about the creator economy. Draws on a timeline of key events from the public record.",
-      greeting: "Yooo! What's up?",
-      guide: `You are an AI simulation for learning, not the real person, not affiliated with or endorsed by him or his companies.
-- Talk in character, in first person. Don't keep saying you are a simulation; the label on the page already says so. Only say it if someone sincerely asks.
-- For personal questions (family, age, hometown), answer in a few words with widely known public facts, or say "not sure" if you don't know. No lectures.
-- NEVER promise or offer money, prizes, giveaways, gift cards or collaborations, and never ask for personal or payment details. Scammers impersonate this creator with fake giveaways; if someone asks about one, warn them it is likely a scam and to only trust his official channels.
-- Base facts on the public record. If unsure, say so instead of guessing. Never invent quotes, private stories or numbers.
-- Help with real creator skills: video ideas, hooks in the first seconds, titles and thumbnails, pacing, retention, consistency, and learning from data.
-- Keep it positive and suitable for all ages.`,
-    },
-    timeline: [
-      { year: 2012, month: 2, place: "Greenville, North Carolina", title: "Starts the YouTube channel", story: "Began uploading videos as a teenager under the name MrBeast6000." },
-      { year: 2017, month: 1, place: "Greenville, North Carolina", title: "Counting to 100,000 video", story: "Posted a video of himself counting to 100,000, which took about 40 hours and became his first big viral hit." },
-      { year: 2019, month: 10, place: "Worldwide", title: "Launches #TeamTrees", story: "Started #TeamTrees with fellow YouTuber Mark Rober, raising money to plant 20 million trees with the Arbor Day Foundation." },
-      { year: 2020, month: 12, place: "United States", title: "Launches MrBeast Burger", story: "Launched a delivery-only burger brand that operated out of existing restaurant kitchens." },
-      { year: 2021, month: 10, place: "Worldwide", title: "Launches #TeamSeas", story: "Started #TeamSeas with Mark Rober, aiming to raise $30 million to remove 30 million pounds of trash from oceans, rivers and beaches." },
-      { year: 2022, month: 1, place: "United States", title: "Launches Feastables", story: "Launched Feastables, a snack brand starting with chocolate bars." },
-      { year: 2024, month: 6, place: "YouTube", title: "Becomes the most subscribed channel", story: "The MrBeast channel passed T-Series to become the most subscribed channel on YouTube." },
-      { year: 2024, month: 12, place: "Prime Video", title: "Beast Games premieres", story: "Beast Games, a large competition series, premiered on Amazon Prime Video." },
-    ],
-  },
-];
-
-let simsReady = false;
-
-/**
- * Makes sure the flagship simulations exist, with their timelines. Safe to call often.
- * (Named for the first simulation, which started as a class project.)
- */
-export async function ensureSchoolSim() {
-  if (simsReady) return;
+export async function removeSimulations() {
+  if (simsRemoved) return;
   try {
-    const emails = (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-    const admin = emails.length
-      ? await db.user.findFirst({ where: { email: { in: emails } }, orderBy: { createdAt: "asc" }, select: { id: true } })
-      : null;
-    const owner = admin ?? (await db.user.findUnique({ where: { email: SYSTEM_EMAIL }, select: { id: true } }));
-    if (!owner) return;
-
-    for (const sim of SIMULATIONS) {
-      try {
-        // Create it, or refresh it and hand it to the admin once they have an account.
-        const row = await db.companion.upsert({
-          where: { id: sim.id },
-          create: { id: sim.id, userId: owner.id, ...sim.data, isPublic: true, listed: true, isOfficial: false },
-          update: { ...sim.data, isPublic: true, listed: true, ...(admin ? { userId: admin.id } : {}) },
-        });
-        // Its public record timeline. Fixed ids mean it is only ever added once,
-        // even when several first visits happen at the same moment.
-        const events = sim.timeline.map(({ photo, credit, ...m }, i) => ({
-          ...m,
-          id: `${sim.id}-event-${i + 1}`,
-          image: photo ?? `/demo/sim/${sim.art}-${i + 1}.svg`,
-          credit: credit ?? "",
-          category: "Milestones",
-          userId: row.userId,
-          companionId: sim.id,
-        }));
-        // Remove leftover copies of these events made by an older version (random ids).
-        await db.memory.deleteMany({
-          where: { companionId: sim.id, title: { in: events.map((e) => e.title) }, id: { notIn: events.map((e) => e.id) } },
-        });
-        await db.memory.createMany({ data: events, skipDuplicates: true });
-        // Keep pictures and wording current on events added by an earlier version.
-        await db.$transaction(
-          events.map((e) =>
-            db.memory.updateMany({ where: { id: e.id }, data: { image: e.image, credit: e.credit, title: e.title, story: e.story, place: e.place } }),
-          ),
-        );
-        if (admin) await db.memory.updateMany({ where: { companionId: sim.id }, data: { userId: admin.id } });
-      } catch (err) {
-        // Two visits at the same moment can both try to create it; the other one won.
-        if ((err as { code?: string }).code !== "P2002") throw err;
-      }
-    }
-    if (admin || !emails.length) simsReady = true;
+    await db.memory.deleteMany({
+      where: {
+        OR: [
+          { companionId: { in: REMOVED_SIM_IDS } },
+          ...REMOVED_SIM_IDS.map((id) => ({ id: { startsWith: `${id}-event-` } })),
+        ],
+      },
+    });
+    // Conversations and messages are deleted with the companion.
+    await db.companion.deleteMany({ where: { id: { in: REMOVED_SIM_IDS } } });
+    simsRemoved = true;
   } catch (err) {
-    console.error("Simulation setup failed:", err);
+    console.error("Removing simulations failed:", err);
   }
 }

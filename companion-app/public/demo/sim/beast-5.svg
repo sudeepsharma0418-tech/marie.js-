@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#dbeef6"/>
-<circle cx="640" cy="120" r="46" fill="#f6d58e"/>
-<path d="M0 300 Q100 270 200 300 T400 300 T600 300 T800 300 V600 H0Z" fill="#5aa0c0"/>
-<path d="M0 360 Q100 330 200 360 T400 360 T600 360 T800 360 V600 H0Z" fill="#3f86a8"/>
-<path d="M0 430 Q100 400 200 430 T400 430 T600 430 T800 430 V600 H0Z" fill="#2f6f8f"/>
-<path d="M300 280 L500 280 L470 340 L330 340Z" fill="#6b4428"/><rect x="395" y="200" width="6" height="80" fill="#3a2a20"/><path d="M401 205 L460 240 L401 260Z" fill="#f6f1ea"/>
-<g><path d="M200 330 q20 -40 40 0 v40 h-40z" fill="#2b2b2b"/><path d="M540 330 q20 -40 40 0 v40 h-40z" fill="#2b2b2b"/></g>
-<text x="400" y="540" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="36" fill="#f6f1ea">CLEAN SEAS</text></svg>

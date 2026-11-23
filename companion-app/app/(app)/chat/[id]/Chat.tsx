@@ -14,12 +14,6 @@ type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: b
 type LaneItem = { id: string; title: string; year: number | null; place: string; src: string };
 type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean; voice: string; hasClone: boolean };
 
-// Speaking styles for the featured simulations: pace and tone of a standard
-// computer voice, inspired by each one's on stage energy. Not voice imitation.
-const VOICE_STYLES: Record<string, { rate: number; pitch: number }> = {
-  "school-trump-sim": { rate: 0.95, pitch: 0.88 }, // a little slower and deeper
-  "sim-mrbeast": { rate: 1.12, pitch: 1.05 }, // a little faster and brighter
-};
 
 const STARTERS = ["Tell me about yourself", "I had a long day", "Ask me something interesting", "Can you help me think something through?"];
 
@@ -44,7 +38,7 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
-  const voice = useVoice(companion.name, VOICE_STYLES[companion.id] ?? voiceStyle(companion.voice), companion.hasClone ? companion.id : undefined);
+  const voice = useVoice(companion.name, voiceStyle(companion.voice), companion.hasClone ? companion.id : undefined);
   const [voiceOn, setVoiceOn] = useState(false);
   const voiceOnRef = useRef(false);
 
