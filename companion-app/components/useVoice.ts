@@ -76,33 +76,43 @@ export function previewVoice(text: string, seedName: string, style?: VoiceStyle)
   return true;
 }
 
-export function useVoice(companionName: string, style?: VoiceStyle) {
+/**
+ * companionName and style shape the device voice. If cloneFor is a companion id,
+ * replies play in that companion's uploaded voice instead (falls back to the device voice).
+ */
+export function useVoice(companionName: string, style?: VoiceStyle, cloneFor?: string) {
   const [canListen, setCanListen] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
   const [listening, setListening] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const rec = useRef<Recognition | null>(null);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const audioCtl = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setCanListen(Boolean(recognitionClass()));
-    setCanSpeak(typeof window !== "undefined" && "speechSynthesis" in window);
+    setCanSpeak(Boolean(cloneFor) || (typeof window !== "undefined" && "speechSynthesis" in window));
     // Some browsers load voices a moment later.
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.getVoices();
     return () => {
       rec.current?.stop();
+      audioCtl.current?.abort();
+      audio.current?.pause();
       if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     };
   }, []);
 
   const stopSpeaking = useCallback(() => {
+    audioCtl.current?.abort();
+    audio.current?.pause();
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     setSpeakingId(null);
   }, []);
 
-  const speak = useCallback(
+  const speakDevice = useCallback(
     (text: string, id: string) => {
-      if (!("speechSynthesis" in window)) return;
+      if (!("speechSynthesis" in window)) return setSpeakingId(null);
       const clean = speakable(text);
       if (!clean) return;
       window.speechSynthesis.cancel();
@@ -122,6 +132,48 @@ export function useVoice(companionName: string, style?: VoiceStyle) {
       window.speechSynthesis.speak(u);
     },
     [companionName, style?.rate, style?.pitch],
+  );
+
+  const speak = useCallback(
+    (text: string, id: string) => {
+      if (!cloneFor) return speakDevice(text, id);
+      const clean = speakable(text);
+      if (!clean) return;
+      audioCtl.current?.abort();
+      audio.current?.pause();
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      const ctl = new AbortController();
+      audioCtl.current = ctl;
+      setSpeakingId(id);
+      fetch("/api/tts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ companionId: cloneFor, text: clean }),
+        signal: ctl.signal,
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error("tts");
+          const url = URL.createObjectURL(await res.blob());
+          if (ctl.signal.aborted) return URL.revokeObjectURL(url);
+          const a = new Audio(url);
+          audio.current = a;
+          const done = () => {
+            URL.revokeObjectURL(url);
+            setSpeakingId((cur) => (cur === id ? null : cur));
+          };
+          a.onended = done;
+          a.onerror = done;
+          a.onpause = done;
+          await a.play();
+        })
+        .catch((e) => {
+          if (ctl.signal.aborted) return;
+          // The uploaded voice is unavailable: use the device voice instead.
+          if ((e as Error).name !== "NotAllowedError") speakDevice(text, id);
+          else setSpeakingId(null);
+        });
+    },
+    [cloneFor, speakDevice],
   );
 
   /** Listens once. Calls onText while speaking and onDone with the final words. */

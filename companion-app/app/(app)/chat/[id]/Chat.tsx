@@ -12,7 +12,7 @@ import { voiceStyle } from "@/lib/voices";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
 type LaneItem = { id: string; title: string; year: number | null; place: string; src: string };
-type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean; voice: string };
+type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean; voice: string; hasClone: boolean };
 
 // Speaking styles for the featured simulations: pace and tone of a standard
 // computer voice, inspired by each one's on stage energy. Not voice imitation.
@@ -44,7 +44,7 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
-  const voice = useVoice(companion.name, VOICE_STYLES[companion.id] ?? voiceStyle(companion.voice));
+  const voice = useVoice(companion.name, VOICE_STYLES[companion.id] ?? voiceStyle(companion.voice), companion.hasClone ? companion.id : undefined);
   const [voiceOn, setVoiceOn] = useState(false);
   const voiceOnRef = useRef(false);
 
@@ -56,7 +56,9 @@ export default function Chat({
   // Remember the voice setting on this device.
   useEffect(() => {
     try {
-      const on = localStorage.getItem("ml-voice") === "on";
+      const saved = localStorage.getItem("ml-voice");
+      // Companions with an uploaded voice speak out loud unless you turned voice off.
+      const on = saved === "on" || (companion.hasClone && saved !== "off");
       setVoiceOn(on);
       voiceOnRef.current = on;
     } catch {}

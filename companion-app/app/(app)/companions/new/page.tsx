@@ -1,5 +1,6 @@
 import { requireMember } from "@/lib/auth";
 import { CATEGORIES, LIMITS, VIBES } from "@/lib/config";
+import { CLONING_ENABLED } from "@/lib/elevenlabs";
 import CompanionForm, { type CompanionPreset } from "@/components/CompanionForm";
 
 export const metadata = { title: "Create a companion" };
@@ -37,7 +38,7 @@ export default async function NewCompanionPage({ searchParams }: { searchParams:
             : "A mentor, a friend, a character, or someone you want to remember. Private unless you choose to share."}
         </p>
       </div>
-      <CompanionForm preset={preset} />
+      <CompanionForm preset={preset} cloning={CLONING_ENABLED} />
     </main>
   );
 }

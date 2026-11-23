@@ -5,6 +5,7 @@ import { createCompanion, updateCompanion } from "@/app/actions";
 import { AVATARS, CATEGORIES, LIMITS, VIBES } from "@/lib/config";
 import { Avatar } from "./Avatar";
 import PhotoPicker from "./PhotoPicker";
+import VoiceUpload from "./VoiceUpload";
 import { previewVoice } from "./useVoice";
 import { VOICES, VOICE_KEYS, voiceStyle } from "@/lib/voices";
 
@@ -22,11 +23,12 @@ export type CompanionDefaults = {
   listed: boolean;
   photoId: string | null;
   voice: string;
+  voiceClone: { fileName: string } | null;
 };
 
-export type CompanionPreset = Partial<Omit<CompanionDefaults, "id" | "photoId">>;
+export type CompanionPreset = Partial<Omit<CompanionDefaults, "id" | "photoId" | "voiceClone">>;
 
-export default function CompanionForm({ initial, preset }: { initial?: CompanionDefaults; preset?: CompanionPreset }) {
+export default function CompanionForm({ initial, preset, cloning = false }: { initial?: CompanionDefaults; preset?: CompanionPreset; cloning?: boolean }) {
   // Defaults come from the companion being edited, or from a prefilled link.
   const d: CompanionPreset | undefined = initial ?? preset;
   const editing = Boolean(initial);
@@ -167,6 +169,7 @@ export default function CompanionForm({ initial, preset }: { initial?: Companion
           ))}
         </div>
         <span className="hint">{VOICES[voice as keyof typeof VOICES]?.hint}. Uses your device&apos;s voice, so it sounds a little different on each device.</span>
+        <VoiceUpload enabled={cloning} companionName={name} initial={initial?.voiceClone} />
       </div>
 
       <div className="label">

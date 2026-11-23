@@ -29,6 +29,7 @@ model User {
   blockedBy      Block[]         @relation("Blocked")
   photos         Photo[]
   memories       Memory[]
+  voiceClones    VoiceClone[]
 }
 
 model Companion {
@@ -57,6 +58,9 @@ model Companion {
   guide       String   @default("")
   // Voice style key from lib/voices.ts, e.g. "warm". Empty means automatic.
   voice       String   @default("")
+  // A voice cloned from an uploaded recording (see VoiceClone). Replies are spoken in it.
+  voiceCloneId String?
+  voiceClone   VoiceClone? @relation(fields: [voiceCloneId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -178,4 +182,19 @@ model Memory {
 
   @@index([userId, year])
   @@index([companionId])
+}
+
+// A voice cloned (with ElevenLabs) from a recording the user uploaded, after
+// they confirmed it is their voice or they have the speaker's permission.
+model VoiceClone {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String
+  fileName   String      @default("")
+  consentAt  DateTime    @default(now())
+  createdAt  DateTime    @default(now())
+  companions Companion[]
+
+  @@index([userId])
 }

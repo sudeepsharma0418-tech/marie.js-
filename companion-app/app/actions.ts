@@ -8,6 +8,8 @@ import { createSession, deleteSession, requireUser } from "@/lib/auth";
 import { AVATARS, CATEGORIES, LIMITS, MEMORY_CATEGORIES, USERNAME_RE, VIBES } from "@/lib/config";
 import { ownPhotoId } from "@/lib/photos";
 import { VOICE_KEYS } from "@/lib/voices";
+import { deleteClone } from "@/lib/elevenlabs";
+import { SIMULATION_IDS } from "@/lib/official";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -141,6 +143,24 @@ function readCompanion(form: FormData): { error: string } | { data: CompanionFie
   };
 }
 
+/** The uploaded voice chosen in the form: an id the user owns, null to remove, undefined to keep. */
+async function readVoiceClone(form: FormData, userId: string): Promise<string | null | undefined> {
+  const raw = str(form, "voiceCloneId");
+  if (raw === "keep") return undefined;
+  if (!raw) return null;
+  const clone = await db.voiceClone.findFirst({ where: { id: raw, userId }, select: { id: true } });
+  return clone?.id ?? null;
+}
+
+/** Deletes cloned voices no companion uses any more. */
+async function cleanupClones(userId: string) {
+  const unused = await db.voiceClone.findMany({ where: { userId, companions: { none: {} } } });
+  for (const c of unused) {
+    await deleteClone(c.providerId);
+    await db.voiceClone.delete({ where: { id: c.id } }).catch(() => {});
+  }
+}
+
 /** Memories added while creating a companion: mem_title_0, mem_year_0, mem_story_0, mem_photo_0, ... */
 async function readStarterMemories(form: FormData, userId: string) {
   const out: { title: string; story: string; year: number | null; photoId: string | null }[] = [];
@@ -171,7 +191,8 @@ export async function createCompanion(_prev: FormState, form: FormData): Promise
 
   const photoId = await ownPhotoId(str(form, "photoId"), user.id);
   const memories = await readStarterMemories(form, user.id);
-  const companion = await db.companion.create({ data: { userId: user.id, ...parsed.data, photoId } });
+  const voiceCloneId = (await readVoiceClone(form, user.id)) ?? null;
+  const companion = await db.companion.create({ data: { userId: user.id, ...parsed.data, photoId, voiceCloneId } });
   if (memories.length) {
     await db.memory.createMany({
       data: memories.map((m) => ({ ...m, userId: user.id, companionId: companion.id, category: "Moments" })),
@@ -198,11 +219,14 @@ export async function updateCompanion(_prev: FormState, form: FormData): Promise
   if ("error" in parsed) return parsed;
 
   const photoId = await ownPhotoId(str(form, "photoId"), user.id);
+  // Public figure simulations never get a cloned voice.
+  const voiceCloneId = SIMULATION_IDS.includes(id) ? null : await readVoiceClone(form, user.id);
   const { count } = await db.companion.updateMany({
     where: { id, userId: user.id },
-    data: { ...parsed.data, photoId },
+    data: { ...parsed.data, photoId, ...(voiceCloneId !== undefined ? { voiceCloneId } : {}) },
   });
   if (count === 0) return { error: "Companion not found." };
+  await cleanupClones(user.id);
 
   revalidatePath("/", "layout");
   redirect(`/c/${id}`);
@@ -212,6 +236,7 @@ export async function deleteCompanion(form: FormData) {
   const user = await requireUser();
   const id = str(form, "id");
   await db.companion.deleteMany({ where: { id, userId: user.id } });
+  await cleanupClones(user.id);
   revalidatePath("/", "layout");
   redirect("/home");
 }
