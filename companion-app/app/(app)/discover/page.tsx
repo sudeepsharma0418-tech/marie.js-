@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { ensureSchoolSim, ensureSetup } from "@/lib/official";
+import { ensureSchoolSim, ensureSetup, SIMULATION_IDS } from "@/lib/official";
+import { Avatar } from "@/components/Avatar";
 import { getUser } from "@/lib/auth";
 import { CATEGORIES } from "@/lib/config";
 import CompanionCard, { cardSelect } from "@/components/CompanionCard";
@@ -27,6 +28,15 @@ export default async function Discover({ searchParams }: { searchParams: Promise
       { tagline: { contains: q.trim(), mode: "insensitive" } },
     ];
   }
+
+  const unfiltered = !q.trim() && !cat && tab === "all";
+  const featured = unfiltered
+    ? await db.companion.findMany({
+        where: { id: { in: SIMULATION_IDS }, isPublic: true },
+        select: { id: true, name: true, tagline: true, avatar: true, image: true, photoId: true },
+      })
+    : [];
+  if (unfiltered) where.id = { notIn: SIMULATION_IDS };
 
   const companions = await db.companion.findMany({
     where,
@@ -77,6 +87,25 @@ export default async function Discover({ searchParams }: { searchParams: Promise
           ))}
         </div>
       </div>
+
+      {featured.length > 0 && (
+        <section>
+          <div className="section-head"><h2>Featured simulations</h2><span className="small faint">AI simulations of public figures, grounded in the public record</span></div>
+          <div className="featured">
+            {featured.map((f) => (
+              <Link key={f.id} href={`/c/${f.id}`} className="feature-card">
+                <Avatar name={f.name} avatar={f.avatar} image={f.image} photoId={f.photoId} size={84} />
+                <div className="grow">
+                  <span className="badge accent">AI simulation</span>
+                  <h3>{f.name}</h3>
+                  <p className="small muted">{f.tagline}</p>
+                </div>
+                <span className="btn light sm">Talk</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {companions.length > 0 ? (
         <div className="grid">{companions.map((c) => <CompanionCard key={c.id} c={c} />)}</div>
