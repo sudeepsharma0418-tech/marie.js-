@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { memorySrc } from "@/lib/photos";
 import { requireMember } from "@/lib/auth";
 import { memoryWhen, timeAgo } from "@/lib/social";
+import { stripRefs } from "@/lib/refs";
 import { Avatar } from "@/components/Avatar";
 import CompanionCard, { cardSelect } from "@/components/CompanionCard";
 
@@ -65,7 +66,7 @@ export default async function Home() {
                   <div className="grow">
                     <strong>{c.companion.name}</strong>
                     <p className="small muted truncate">
-                      {last ? `${last.role === "user" ? "You: " : ""}${last.content}` : "Say hello"}
+                      {last ? `${last.role === "user" ? "You: " : ""}${stripRefs(last.content)}` : "Say hello"}
                     </p>
                   </div>
                   <span className="when">{timeAgo(c.updatedAt)}</span>

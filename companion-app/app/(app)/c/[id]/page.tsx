@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { ensureSchoolSim, ensureSetup } from "@/lib/official";
+import { ensureSchoolSim, ensureSetup, SCHOOL_SIM_ID } from "@/lib/official";
 import { memorySrc } from "@/lib/photos";
 import { getUser } from "@/lib/auth";
 import { compact, memoryWhen } from "@/lib/social";
@@ -40,11 +40,12 @@ export default async function CompanionPage({ params }: Props) {
   if (!c) notFound();
 
   const isOwner = user?.id === c.userId;
-  const memories = isOwner
+  const showMemories = isOwner || c.id === SCHOOL_SIM_ID;
+  const memories = showMemories
     ? await db.memory.findMany({
         where: { companionId: c.id },
         orderBy: [{ year: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
-        take: 12,
+        take: 24,
         select: { id: true, title: true, year: true, month: true, photoId: true, image: true, story: true, place: true },
       })
     : [];
@@ -128,16 +129,16 @@ export default async function CompanionPage({ params }: Props) {
         </section>
       </div>
 
-      {isOwner && (
+      {showMemories && (
         <section>
           <div className="section-head">
-            <h2>Memories {c.name} knows</h2>
-            <Link href={`/memories/new?companion=${c.id}`}>Add a memory</Link>
+            <h2>{c.id === SCHOOL_SIM_ID ? "Timeline from the public record" : `Memories ${c.name} knows`}</h2>
+            {isOwner && <Link href={`/memories/new?companion=${c.id}`}>Add a memory</Link>}
           </div>
           {memories.length > 0 ? (
             <div className="memory-strip">
               {memories.map((m) => (
-                <Link key={m.id} href={`/memories/${m.id}`} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
+                <Link key={m.id} href={isOwner ? `/memories/${m.id}` : "#"} className={`memory-card ${memorySrc(m) ? "" : "text-only"}`}>
                   {memorySrc(m) ? <img src={memorySrc(m)} alt="" loading="lazy" /> : <p className="memory-quote clamp4">{m.story}</p>}
                   <div className="memory-meta">
                     <strong className="truncate">{m.title}</strong>

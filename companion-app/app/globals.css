@@ -470,3 +470,13 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 .table td { padding: 12px 16px; border-bottom: 1px solid var(--divider); vertical-align: middle; }
 .table tr:last-child td { border-bottom: 0; }
 @media (max-width: 760px) { .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Memory references under a reply */
+.bubble-col { display: flex; flex-direction: column; gap: 6px; max-width: min(76%, 540px); }
+.bubble-col .bubble { max-width: 100%; align-self: flex-start; }
+.bubble-row.user .bubble-col { align-items: flex-end; }
+.bubble-row.user .bubble-col .bubble { align-self: flex-end; }
+.refs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ref-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; color: var(--primary); background: var(--primary-soft); }
+.ref-tag svg { width: 12px; height: 12px; }
+@media (max-width: 760px) { .bubble-col { max-width: 86%; } }

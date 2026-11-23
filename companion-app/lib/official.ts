@@ -239,7 +239,7 @@ async function setup() {
 export const SCHOOL_SIM_ID = "school-trump-sim";
 
 const SCHOOL_SIM = {
-  name: "AI Trump Simulation (School Project)",
+  name: "AI Trump Simulation",
   avatar: "slate",
   vibe: "Witty",
   category: "Learning",
@@ -247,8 +247,8 @@ const SCHOOL_SIM = {
   personality:
     "An AI simulation of Donald Trump's public speaking style for a school project: confident, informal, short punchy sentences, repetition, big superlatives. Talks about his publicly known positions and record as president, based on the public record. Stays respectful and suitable for school.",
   backstory:
-    "Simulates the public persona of the 45th and 47th US president for students studying political communication.",
-  greeting: "As an AI simulation for your school project: what do you want to ask about policy, campaigns or how I communicate?",
+    "Simulates the public persona of the 45th and 47th US president for students studying political communication. Draws on a timeline of key events from the public record.",
+  greeting: "As an AI simulation: what do you want to ask about policy, campaigns or how I communicate?",
   guide: `You are an AI simulation used in a civics class, not the real person.
 - Open important answers with "As an AI simulation, I'd say..." and remind students you are a simulation if they seem to forget.
 - Base positions on the public record. If unsure, say "I'm not sure, check a reliable source."
@@ -260,6 +260,21 @@ const SCHOOL_SIM = {
   listed: true,
   isOfficial: false,
 };
+
+// Key events from the public record, shown on the simulation's timeline and
+// used to ground its answers. Keep these factual and neutral.
+const SCHOOL_SIM_TIMELINE = [
+  { year: 2015, month: 6, place: "Trump Tower, New York", title: "Announces presidential campaign", story: "Launched his first presidential campaign with a speech at Trump Tower, focused on immigration, trade and jobs." },
+  { year: 2016, month: 11, place: "United States", title: "Wins the 2016 presidential election", story: "Defeated Hillary Clinton in the Electoral College while losing the national popular vote." },
+  { year: 2017, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 45th president", story: "Sworn in on January 20, 2017. The inaugural address centered on the theme of \"America First\"." },
+  { year: 2017, month: 12, place: "Washington, D.C.", title: "Signs the Tax Cuts and Jobs Act", story: "Signed a major tax law that cut the corporate tax rate from 35% to 21% and changed individual income tax brackets." },
+  { year: 2018, month: 3, place: "Washington, D.C.", title: "Announces steel and aluminum tariffs", story: "Announced tariffs of 25% on imported steel and 10% on imported aluminum, citing national security." },
+  { year: 2018, month: 6, place: "Singapore", title: "Singapore summit with Kim Jong Un", story: "Became the first sitting US president to meet a North Korean leader, at a summit in Singapore on June 12, 2018." },
+  { year: 2020, month: 1, place: "Washington, D.C.", title: "Signs the USMCA trade agreement", story: "Signed the United States-Mexico-Canada Agreement, which replaced NAFTA." },
+  { year: 2020, month: 11, place: "United States", title: "Loses the 2020 presidential election", story: "Lost the 2020 election to Joe Biden." },
+  { year: 2024, month: 11, place: "United States", title: "Wins the 2024 presidential election", story: "Defeated Kamala Harris to win a second, non consecutive term." },
+  { year: 2025, month: 1, place: "Washington, D.C.", title: "Inaugurated as the 47th president", story: "Sworn in on January 20, 2025, becoming the second president to serve two non consecutive terms, after Grover Cleveland." },
+];
 
 let schoolReady = false;
 
@@ -279,11 +294,32 @@ export async function ensureSchoolSim() {
     if (!owner) return;
 
     // Create it, or keep it on Explore and hand it to the admin once they have an account.
-    await db.companion.upsert({
+    const sim = await db.companion.upsert({
       where: { id: SCHOOL_SIM_ID },
       create: { id: SCHOOL_SIM_ID, userId: owner.id, ...SCHOOL_SIM },
-      update: { isPublic: true, listed: true, ...(admin ? { userId: admin.id } : {}) },
+      update: {
+        name: SCHOOL_SIM.name,
+        greeting: SCHOOL_SIM.greeting,
+        backstory: SCHOOL_SIM.backstory,
+        guide: SCHOOL_SIM.guide,
+        isPublic: true,
+        listed: true,
+        ...(admin ? { userId: admin.id } : {}),
+      },
     });
+    // Its public record timeline. Fixed ids mean it is only ever added once,
+    // even when several first visits happen at the same moment.
+    await db.memory.createMany({
+      data: SCHOOL_SIM_TIMELINE.map((m, i) => ({
+        ...m,
+        id: `${SCHOOL_SIM_ID}-event-${i + 1}`,
+        category: "Milestones",
+        userId: sim.userId,
+        companionId: SCHOOL_SIM_ID,
+      })),
+      skipDuplicates: true,
+    });
+    if (admin) await db.memory.updateMany({ where: { companionId: SCHOOL_SIM_ID }, data: { userId: admin.id } });
     if (admin || !emails.length) schoolReady = true;
   } catch (err) {
     // Two visits at the same moment can both try to create it; the other one won.
