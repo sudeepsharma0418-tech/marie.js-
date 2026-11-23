@@ -20,3 +20,10 @@ export async function ownPhotoId(photoId: string, userId: string) {
 }
 
 export const photoUrl = (id: string, size: "full" | "thumb" = "thumb") => `/api/photos/${id}${size === "thumb" ? "?size=thumb" : ""}`;
+
+/** The picture for a memory: an uploaded photo, a built in illustration, or none. */
+export function memorySrc(m: { photoId: string | null; image?: string | null }, size: "full" | "thumb" = "thumb") {
+  if (m.photoId) return photoUrl(m.photoId, size);
+  if (m.image && m.image.startsWith("/demo/")) return m.image;
+  return "";
+}

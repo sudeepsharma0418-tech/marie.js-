@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/auth";
-import { logout } from "@/app/actions";
+import { loadSampleMemories, logout } from "@/app/actions";
 import ProfileForm from "@/components/ProfileForm";
 
 export const metadata = { title: "Settings" };
@@ -18,6 +18,13 @@ export default async function Settings() {
       </div>
       <section className="panel pad">
         <ProfileForm initial={{ name: user.name, username: user.username, bio: user.bio }} />
+      </section>
+      <section className="panel pad row between wrap">
+        <div>
+          <strong>Sample memories</strong>
+          <p className="small muted" style={{ marginTop: 4 }}>Adds a private sample companion, Grandpa Joe, with four illustrated memories on your timeline. Handy for demos.</p>
+        </div>
+        <form action={loadSampleMemories}><button className="btn outline">Load sample</button></form>
       </section>
       <form action={logout}>
         <button className="btn outline">Log out</button>

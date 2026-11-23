@@ -15,7 +15,7 @@ export function Avatar({
   size?: number;
 }) {
   const style = { "--size": `${size}px` } as React.CSSProperties;
-  const src = photoId ? `/api/photos/${photoId}?size=thumb` : image && image.startsWith("/companions/") ? image : "";
+  const src = photoId ? `/api/photos/${photoId}?size=thumb` : image && (image.startsWith("/companions/") || image.startsWith("/demo/")) ? image : "";
   if (src) {
     return (
       <span className="av photo" style={style} aria-hidden>

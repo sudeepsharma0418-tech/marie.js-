@@ -100,6 +100,7 @@ type CompanionFields = {
   backstory: string;
   greeting: string;
   isPublic: boolean;
+  listed: boolean;
 };
 
 function readCompanion(form: FormData): { error: string } | { data: CompanionFields } {
@@ -130,7 +131,9 @@ function readCompanion(form: FormData): { error: string } | { data: CompanionFie
       personality,
       backstory,
       greeting,
-      isPublic: form.get("isPublic") === "on",
+      // "private": only you. "link": anyone with the link. "public": also listed on Explore.
+      isPublic: ["link", "public"].includes(str(form, "visibility")),
+      listed: str(form, "visibility") !== "link",
     },
   };
 }
@@ -351,4 +354,47 @@ export async function deleteMemory(form: FormData) {
   }
   revalidatePath("/memories");
   redirect("/memories");
+}
+
+// ---------- Sample memories (for demos and first time users) ----------
+
+const SAMPLE_COMPANION = {
+  name: "Grandpa Joe",
+  image: "/demo/joe.svg",
+  avatar: "slate",
+  vibe: "Friendly",
+  category: "Friends",
+  tagline: "Stories from the farm, bad puns, and the best pancakes.",
+  personality:
+    "Warm, patient and a little cheeky. Calls you \"kiddo\". Loves bad puns, fishing, and Sunday breakfasts. Always asks if you're eating well. Gives advice through stories instead of lectures.",
+  backstory:
+    "Grew up on a small farm in Ohio, the youngest of five. Worked 30 years as a carpenter. Married to Rose for 52 years. Taught every grandchild to fish at the lake, though he never caught much himself.",
+  greeting: "There you are, kiddo! Pull up a chair. How's life treating you?",
+};
+
+const SAMPLE_MEMORIES = [
+  { title: "Summer at the lake", year: 1998, month: 7, place: "Lake Erie", category: "Travel", image: "/demo/lake.svg",
+    story: "Every summer he woke us at 6 to go fishing. He never caught anything, but he always said tomorrow would be the day." },
+  { title: "Sunday pancakes", year: 2003, month: null, place: "Grandma's kitchen", category: "Family", image: "/demo/pancakes.svg",
+    story: "He made pancakes every Sunday with a pinch of cinnamon. He said it was a secret, and Grandma pretended not to know." },
+  { title: "The workshop", year: 2008, month: null, place: "His garage", category: "Everyday", image: "/demo/workshop.svg",
+    story: "He built me a bookshelf for my 12th birthday. It wobbled, and he said that gave it character." },
+  { title: "Golden anniversary", year: 2015, month: 6, place: "The backyard", category: "Celebrations", image: "/demo/anniversary.svg",
+    story: "Fifty years with Rose. He gave a speech and cried halfway through, then blamed the onions in the potato salad." },
+];
+
+/** Adds a sample companion with four illustrated memories, once per account. */
+export async function loadSampleMemories() {
+  const user = await requireUser();
+  const existing = await db.companion.findFirst({ where: { userId: user.id, image: SAMPLE_COMPANION.image } });
+  if (!existing) {
+    const companion = await db.companion.create({
+      data: { userId: user.id, ...SAMPLE_COMPANION, isPublic: false },
+    });
+    await db.memory.createMany({
+      data: SAMPLE_MEMORIES.map((m) => ({ ...m, userId: user.id, companionId: companion.id })),
+    });
+  }
+  revalidatePath("/", "layout");
+  redirect("/memories?view=timeline");
 }
