@@ -22,7 +22,7 @@ export default function AuthForm({ mode, appName }: { mode: "login" | "signup"; 
           <div className="stack" style={{ gap: 8 }}>
             <h1>{isSignup ? "Create your account" : "Welcome back"}</h1>
             <p className="muted small">
-              {isSignup ? "Free during early access." : "Log in to continue."}
+              {isSignup ? "Just your name, email and a password. Free during early access." : "Log in to continue."}
             </p>
           </div>
 
@@ -31,19 +31,6 @@ export default function AuthForm({ mode, appName }: { mode: "login" | "signup"; 
               <label>
                 Your name
                 <input name="name" required maxLength={60} autoComplete="name" placeholder="Sam Rivera" />
-              </label>
-              <label>
-                Username
-                <input
-                  name="username"
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  pattern="[a-zA-Z0-9_]{3,20}"
-                  autoComplete="username"
-                  placeholder="sam"
-                />
-                <span className="hint">Letters, numbers and _ only. People find you by this.</span>
               </label>
             </>
           )}

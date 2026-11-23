@@ -33,20 +33,32 @@ async function checkUsername(raw: string, userId?: string): Promise<string | { e
 
 // ---------- Auth ----------
 
+/** Makes a free username from the person's name (or email), e.g. "Sam Rivera" -> "sam_rivera". */
+async function autoUsername(name: string, email: string) {
+  let base = name.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 15);
+  if (base.length < 3) base = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]+/g, "").slice(0, 15);
+  if (base.length < 3) base = "friend";
+  for (let i = 0; i < 20; i++) {
+    const candidate = i === 0 && !RESERVED.has(base) ? base : `${base}_${Math.floor(100 + Math.random() * 9900)}`;
+    if (!(await db.user.findUnique({ where: { username: candidate }, select: { id: true } }))) return candidate;
+  }
+  return `${base}_${Date.now().toString().slice(-6)}`;
+}
+
 export async function signup(_prev: FormState, form: FormData): Promise<FormState> {
   const name = str(form, "name");
   const email = str(form, "email").toLowerCase();
   const password = String(form.get("password") ?? "");
 
   if (!name || name.length > 60) return { error: "Please enter your name." };
-  const username = await checkUsername(str(form, "username"));
-  if (typeof username !== "string") return username;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Please enter a valid email." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
 
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) return { error: "An account with this email already exists. Try logging in." };
 
+  // A username is made automatically; people can change it later in Settings.
+  const username = await autoUsername(name, email);
   const user = await db.user.create({
     data: { name, email, username, passwordHash: await bcrypt.hash(password, 10) },
   });
