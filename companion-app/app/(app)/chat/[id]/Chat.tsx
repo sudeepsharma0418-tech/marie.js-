@@ -12,6 +12,13 @@ import { splitRefs, stripRefs } from "@/lib/refs";
 type Msg = { id: string; role: "user" | "assistant"; content: string; failed?: boolean };
 type CompanionProps = { id: string; name: string; avatar: string; photoId: string | null; image: string; vibe: string; tagline: string; isOwner: boolean };
 
+// Speaking styles for the featured simulations: pace and tone of a standard
+// computer voice, inspired by each one's on stage energy. Not voice imitation.
+const VOICE_STYLES: Record<string, { rate: number; pitch: number }> = {
+  "school-trump-sim": { rate: 0.92, pitch: 0.75 }, // slower, deeper, deliberate speech
+  "sim-mrbeast": { rate: 1.25, pitch: 1.15 }, // fast, high energy video intro
+};
+
 const STARTERS = ["Tell me about yourself", "I had a long day", "Ask me something interesting", "Can you help me think something through?"];
 
 export default function Chat({
@@ -33,7 +40,7 @@ export default function Chat({
   const menuRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stickToBottom = useRef(true);
-  const voice = useVoice(companion.name);
+  const voice = useVoice(companion.name, VOICE_STYLES[companion.id]);
   const [voiceOn, setVoiceOn] = useState(false);
   const voiceOnRef = useRef(false);
 

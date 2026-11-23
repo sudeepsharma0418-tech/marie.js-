@@ -38,7 +38,10 @@ function seed(name: string) {
   return h;
 }
 
-export function useVoice(companionName: string) {
+/** Optional speaking style: pace and tone only. It never imitates a real person's voice. */
+export type VoiceStyle = { rate?: number; pitch?: number };
+
+export function useVoice(companionName: string, style?: VoiceStyle) {
   const [canListen, setCanListen] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
   const [listening, setListening] = useState(false);
@@ -74,14 +77,14 @@ export function useVoice(companionName: string) {
       const pool = voices.length ? voices : window.speechSynthesis.getVoices();
       const s = seed(companionName);
       if (pool.length) u.voice = pool[s % pool.length];
-      u.rate = 1;
-      u.pitch = 0.9 + (s % 5) * 0.05; // a slightly different tone per companion
+      u.rate = style?.rate ?? 1;
+      u.pitch = style?.pitch ?? 0.9 + (s % 5) * 0.05; // a slightly different tone per companion
       u.onend = () => setSpeakingId((cur) => (cur === id ? null : cur));
       u.onerror = () => setSpeakingId((cur) => (cur === id ? null : cur));
       setSpeakingId(id);
       window.speechSynthesis.speak(u);
     },
-    [companionName],
+    [companionName, style?.rate, style?.pitch],
   );
 
   /** Listens once. Calls onText while speaking and onDone with the final words. */
